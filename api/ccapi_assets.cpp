@@ -17,24 +17,13 @@ static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GE
 
     // open session
     HINTERNET session = WinHttpOpen(
-        L"ccapi/1.0",
+        L"Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
         nullptr,
         nullptr,
         0
     );
     if (!session) return std::nullopt;
-
-    DWORD protocols =
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 |
-        WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
-
-    WinHttpSetOption(
-        session,
-        WINHTTP_OPTION_SECURE_PROTOCOLS,
-        &protocols,
-        sizeof(protocols)
-    );
 
     // connect to host
     HINTERNET connection = WinHttpConnect(
@@ -65,18 +54,36 @@ static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GE
         return std::nullopt;
     }
 
-    DWORD redirectPolicy = WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS;
+    DWORD securityflags =
+        SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+        SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+        SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+        SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
+
     WinHttpSetOption(
         request,
-        WINHTTP_OPTION_REDIRECT_POLICY,
-        &redirectPolicy,
-        sizeof(redirectPolicy)
+        WINHTTP_OPTION_SECURITY_FLAGS,
+        &securityflags,
+        sizeof(securityflags)
     );
 
     // send request
-    if (!WinHttpSendRequest(request, nullptr, 0, nullptr, 0, 0, 0) ||
-        !WinHttpReceiveResponse(request, nullptr))
+    if (!WinHttpSendRequest(request, nullptr, 0, nullptr, 0, 0, 0))
     {
+        DWORD err = GetLastError();
+        std::cout << "WinHttpSendRequest failed: " << err << "\n";
+
+        WinHttpCloseHandle(request);
+        WinHttpCloseHandle(connection);
+        WinHttpCloseHandle(session);
+        return std::nullopt;
+    }
+
+    if (!WinHttpReceiveResponse(request, nullptr))
+    {
+        DWORD err = GetLastError();
+        std::cout << "WinHttpReceiveResponse failed: " << err << "\n";
+
         WinHttpCloseHandle(request);
         WinHttpCloseHandle(connection);
         WinHttpCloseHandle(session);
