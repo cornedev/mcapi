@@ -63,9 +63,9 @@ static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GE
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-    // Match launcher behavior
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    // security
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
 
     CURLcode res = curl_easy_perform(curl);
