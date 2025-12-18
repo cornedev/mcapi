@@ -3,92 +3,23 @@
 namespace ccapi
 {
 
+static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
+{
+    auto* pair = static_cast<std::pair<std::string*, std::ofstream*>*>(userdata);
+    const size_t total = size * nmemb;
+
+    if (pair->second && pair->second->is_open())
+        pair->second->write(static_cast<char*>(ptr), total);
+
+    if (pair->first)
+        pair->first->append(static_cast<char*>(ptr), total);
+
+    return total;
+}
+
 static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GETmode::MemoryOnly, const std::string& filename = "", const std::string& folder = "")
 {
-    URL_COMPONENTS comp{};
-    comp.dwStructSize = sizeof(comp);
-    comp.dwHostNameLength = -1;
-    comp.dwUrlPathLength  = -1;
-    if (!WinHttpCrackUrl(url.c_str(), 0, 0, &comp))
-        return std::nullopt;
-
-    std::wstring host(comp.lpszHostName, comp.dwHostNameLength);
-    std::wstring path(comp.lpszUrlPath,  comp.dwUrlPathLength);
-
-    // open session
-    HINTERNET session = WinHttpOpen(
-        L"Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-        WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-        nullptr,
-        nullptr,
-        0
-    );
-    if (!session) return std::nullopt;
-
-    // connect to host
-    HINTERNET connection = WinHttpConnect(
-        session,
-        host.c_str(),
-        INTERNET_DEFAULT_HTTPS_PORT,
-        0
-    );
-    if (!connection)
-    {
-        WinHttpCloseHandle(session);
-        return std::nullopt;
-    }
-    // create GET request
-    HINTERNET request = WinHttpOpenRequest(
-        connection,
-        L"GET",
-        path.c_str(),
-        nullptr,
-        WINHTTP_NO_REFERER,
-        WINHTTP_DEFAULT_ACCEPT_TYPES,
-        WINHTTP_FLAG_SECURE
-    );
-    if (!request)
-    {
-        WinHttpCloseHandle(connection);
-        WinHttpCloseHandle(session);
-        return std::nullopt;
-    }
-
-    DWORD securityflags =
-        SECURITY_FLAG_IGNORE_UNKNOWN_CA |
-        SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
-        SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-        SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE;
-
-    WinHttpSetOption(
-        request,
-        WINHTTP_OPTION_SECURITY_FLAGS,
-        &securityflags,
-        sizeof(securityflags)
-    );
-
-    // send request
-    if (!WinHttpSendRequest(request, nullptr, 0, nullptr, 0, 0, 0))
-    {
-        DWORD err = GetLastError();
-        std::cout << "WinHttpSendRequest failed: " << err << "\n";
-
-        WinHttpCloseHandle(request);
-        WinHttpCloseHandle(connection);
-        WinHttpCloseHandle(session);
-        return std::nullopt;
-    }
-
-    if (!WinHttpReceiveResponse(request, nullptr))
-    {
-        DWORD err = GetLastError();
-        std::cout << "WinHttpReceiveResponse failed: " << err << "\n";
-
-        WinHttpCloseHandle(request);
-        WinHttpCloseHandle(connection);
-        WinHttpCloseHandle(session);
-        return std::nullopt;
-    }
+    std::string curlurl(url.begin(), url.end());
 
     std::ofstream out;
     std::string response;
@@ -99,12 +30,10 @@ static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GE
 
         if (diskfile.empty())
         {
-            size_t slash = url.find_last_of(L"/");
-            if (slash != std::wstring::npos && slash + 1 < url.size())
-            {
-                std::wstring wname = url.substr(slash + 1);
-                diskfile.assign(wname.begin(), wname.end());
-            }
+            auto slash = curlurl.find_last_of('/');
+            if (slash != std::string::npos && slash + 1 < curlurl.size())
+                diskfile = curlurl.substr(slash + 1);
+
             if (diskfile.empty())
                 diskfile = "download.bin";
         }
@@ -116,39 +45,37 @@ static std::optional<std::string> GET(const std::wstring& url, GETmode mode = GE
         }
 
         out.open(diskfile, std::ios::binary);
-        if (!out.is_open())
-        {
-            WinHttpCloseHandle(request);
-            WinHttpCloseHandle(connection);
-            WinHttpCloseHandle(session);
+        if (!out)
             return std::nullopt;
-        }
     }
 
-    DWORD available = 0;
-    while (true)
-    {
-        if (!WinHttpQueryDataAvailable(request, &available) || available == 0)
-            break;
+    CURL* curl = curl_easy_init();
+    if (!curl)
+        return std::nullopt;
 
-        std::vector<char> buffer(available);
-        DWORD read = 0;
+    std::pair<std::string*, std::ofstream*> userdata{
+        (mode == GETmode::MemoryOnly || mode == GETmode::MemoryAndDisk) ? &response : nullptr,
+        (mode == GETmode::DiskOnly  || mode == GETmode::MemoryAndDisk) ? &out      : nullptr
+    };
 
-        if (!WinHttpReadData(request, buffer.data(), available, &read) || read == 0)
-            break;
+    curl_easy_setopt(curl, CURLOPT_URL, curlurl.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-        if (mode == GETmode::DiskOnly || mode == GETmode::MemoryAndDisk)
-            out.write(buffer.data(), read);
-        if (mode == GETmode::MemoryOnly || mode == GETmode::MemoryAndDisk)
-            response.append(buffer.data(), read);
-    }
+    // Match launcher behavior
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+    CURLcode res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
 
     if (out.is_open())
         out.close();
 
-    WinHttpCloseHandle(request);
-    WinHttpCloseHandle(connection);
-    WinHttpCloseHandle(session);
+    if (res != CURLE_OK)
+        return std::nullopt;
 
     if (mode == GETmode::DiskOnly)
         return std::string{};
