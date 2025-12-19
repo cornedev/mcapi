@@ -21,17 +21,17 @@ This API is in WIP state.
    ```sh
    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
    ```
-and then:
+   and then:
    ```sh
    cmake --build build
    ```
-That's it. The executable will be in `/build/` and all dependencies will be automatically copied from `/runtime/bin/`
+   That's it. The executable will be in `/build/` and all dependencies will be automatically copied from `/runtime/bin/`
 
-If you ever want to clean or rebuild:
+   If you ever want to clean or rebuild:
    ```sh
    rm -rf build
    ```
-And run the build commands again.
+   And run the build commands again.
 ### Linux
 Not yet supported.
 
