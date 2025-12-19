@@ -25,9 +25,9 @@ This API is in WIP state.
    ```sh
    cmake --build build
    ```
-   That's it. The executable will be in `/build/` and all dependencies will be automatically copied from `/runtime/bin/`
+That's it. The executable will be in `/build/` and all dependencies will be automatically copied from `/runtime/bin/`
 
-   If you ever want to clean or rebuild:
+If you ever want to clean or rebuild:
    ```sh
    rm -rf build
    ```
