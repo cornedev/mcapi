@@ -1,5 +1,39 @@
-![ccapi_ico](cli/gfx/clilauncher.png)
+# ![ccapi_ico](cli/gfx/clilauncher.png)
 # ccapi
 An API for downloading minecraft assets.
 
-This API is in WIP state and not yet ready for the first version.
+This API is in WIP state.
+
+# Building
+
+### Windows
+1. Download the latest version of [MSYS2](https://www.msys2.org/). After installation open the MINGW64 shell.
+2. Install the following dependency:
+```sh
+pacman -S mingw-w64-x86_64-libzip
+```
+3. Clone this repository:
+```sh
+git clone https://github.com/cornedev/ccapi.git
+cd ccapi
+```
+4. Build the application:
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+```
+and then:
+```sh
+cmake --build build
+```
+That's it. The executable will be in `/build/` and all dependencies will be automatically copied from `/runtime/bin/`
+
+If you ever want to clean or rebuild:
+```sh
+rm -rf build
+```
+And run the build commands again.
+### Linux
+Not yet supported.
+
+### License
+All the code is licensed under the [MIT license](LICENSE).
