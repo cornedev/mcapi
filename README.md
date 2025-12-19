@@ -15,7 +15,7 @@ This API is in WIP state.
 3. Clone this repository:
    ```sh
    git clone https://github.com/cornedev/ccapi.git
-   cd ccapi
+   cd ccapi/cli
    ```
 4. Build the application:
    ```sh
