@@ -4,6 +4,21 @@ An API for downloading minecraft assets.
 
 This API is in WIP state.
 
+## Features
+- Simple API
+    - Version json downloading.
+    - Client jar downloading.
+    - Assets downloading.
+    - Server jar downloading.
+    - Libraries downloading.
+    - Natives extracting (currently only works for newer versions).
+    - Starting a offline Minecraft process.
+## Planned
+- Fabric support.
+- Natives downloading for older versions.
+- Server process starting.
+- Jdk downloading.
+
 # Building
 
 ### Windows
