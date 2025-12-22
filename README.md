@@ -19,7 +19,7 @@ This API is in WIP state.
 - Natives downloading for older versions.
 - Server process starting.
 
-* Windows only
+*Windows only
 # Building
 
 ### Windows
