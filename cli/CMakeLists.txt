@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(ccapi_cli LANGUAGES CXX)
+find_package(LibArchive REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,6 +41,7 @@ set(CURL_LIB ${RUNTIME_DIR}/lib/libcurl.dll.a)
 target_link_libraries(ccapi_cli PRIVATE
     ${CURL_LIB}
     zip
+    LibArchive::LibArchive
 )
 
 file(GLOB RUNTIME_DLLS
