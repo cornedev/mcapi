@@ -137,7 +137,7 @@ int main()
                 std::cout << "Failed to download manifest.\n";
                 break;
             }
-            std::cout << "Version manifest downloaded\n";
+            std::cout << "Version manifest downloaded.\n";
 
             // download version json.
             auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
@@ -175,7 +175,7 @@ int main()
                 osenum = ccapi::OS::macos;
             else
             {
-                std::cerr << "Invalid OS\n";
+                std::cerr << "Invalid OS.\n";
                 return 1;
             }
             ccapi::Arch archenum;
@@ -187,7 +187,7 @@ int main()
                 archenum = ccapi::Arch::arm64;
             else
             {
-                std::cerr << "Invalid architecture\n";
+                std::cerr << "Invalid architecture.\n";
                 return 1;
             }
 
@@ -399,3 +399,4 @@ int main()
     }
     return 0;
 }
+
