@@ -158,8 +158,49 @@ int main()
             std::cout << "Version json downloaded.\n";
             auto versionjson = *versionjsonopt;
 
+            std::cout << "Enter OS (choose from: windows, linux, macos): ";
+            std::string os;
+            std::cin >> os;
+            std::cout << "Enter architecture (choose from: x64, x32, arm64): ";
+            std::string arch;
+            std::cin >> arch;
+
+            // conversion.
+            ccapi::OS osenum;
+            if (os == "windows")
+                osenum = ccapi::OS::windows;
+            else if (os == "linux")
+                osenum = ccapi::OS::linux;
+            else if (os == "macos")
+                osenum = ccapi::OS::macos;
+            else
+            {
+                std::cerr << "Invalid OS\n";
+                return 1;
+            }
+            ccapi::Arch archenum;
+            if (arch == "x64")
+                archenum = ccapi::Arch::x64;
+            else if (arch == "x32")
+                archenum = ccapi::Arch::x32;
+            else if (arch == "arm64")
+                archenum = ccapi::Arch::arm64;
+            else
+            {
+                std::cerr << "Invalid architecture\n";
+                return 1;
+            }
+
             // download java.
-            auto javaurlopt = ccapi::GetJavaDownloadUrl(versionjson);
+            auto javaversionopt = ccapi::GetJavaVersion(versionjson);
+            if (!javaversionopt)
+            {
+                std:: cout << "Failed to get java version.\n";
+                break;
+            }
+            int javaversion = *javaversionopt;
+
+            auto javaurlopt = ccapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
             if (!javaurlopt)
             {
                 std:: cout << "Failed to get java download url.\n";
@@ -167,6 +208,7 @@ int main()
             }
             auto javaurl = *javaurlopt;
 
+            std::cout << "Downloading java...\n";
             auto javaopt = ccapi::DownloadJava(javaurl, versionid);
             if (!javaopt)
             {
