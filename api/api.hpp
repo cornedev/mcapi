@@ -14,6 +14,8 @@
 #include <functional>
 namespace fs = std::filesystem;
 #include <zip.h>
+#include <archive.h>
+#include <archive_entry.h>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
@@ -24,6 +26,20 @@ namespace ccapi
         MemoryOnly,
         DiskOnly,
         MemoryAndDisk
+    };
+
+    enum class OS
+    {
+        windows,
+        linux,
+        macos
+    };
+
+    enum class Arch
+    {
+        x64,
+        x32,
+        arm64
     };
 
     std::optional<std::string> GET(const std::wstring& url, GETmode mode = GETmode::MemoryOnly, const std::string& filename = "", const std::string& folder = "");
@@ -46,7 +62,8 @@ namespace ccapi
     std::optional<std::string> GetServerJarDownloadUrl(const std::string& versionjson);
     std::optional<std::string> DownloadServerJar(const std::string& serverurl, const std::string& versionid);
 
-    std::optional<std::string> GetJavaDownloadUrl(const std::string& versionjson);
+    std::optional<int> GetJavaVersion(const std::string& versionjson);
+    std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
 
     bool StartProcess(const std::string& javapath, const std::string& args);
