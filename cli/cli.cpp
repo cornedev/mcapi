@@ -12,7 +12,7 @@ int main()
         std::cout << "ccapi clilauncher 1.0\n";
         std::cout << "1. Download all required assets for minecraft.\n";
         std::cout << "2. Download java for minecraft.\n";
-        std::cout << "3. Launch minecraft.\n";
+        std::cout << "3. Launch minecraft (windows only for now).\n";
         std::cout << "4. Download server jar.\n";
         std::cout << "5. Launch server.\n";
         std::cout << "6. Exit.\n";
@@ -399,4 +399,3 @@ int main()
     }
     return 0;
 }
-
