@@ -37,20 +37,20 @@ std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch)
         return std::nullopt;
     }
 
-    if (arch == Arch::arm64 && os == OS::macos)
+    if (arch == Arch::arm64 && os == OS::Macos)
     {
-        std::cout << "arm64 is not supported on macos.\n";
+        std::cout << "arm64 is not supported on Macos.\n";
         return std::nullopt;
     }
 
     const char* osStr = nullptr;
     switch (os)
     {
-        case OS::windows: osStr = "windows";
+        case OS::Windows: osStr = "Windows";
         break;
-        case OS::linux: osStr = "linux";
+        case OS::Linux: osStr = "Linux";
         break;
-        case OS::macos: osStr = "mac";
+        case OS::Macos: osStr = "mac";
         break;
         default: return std::nullopt;
     }
