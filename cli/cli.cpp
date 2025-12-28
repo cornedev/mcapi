@@ -168,11 +168,11 @@ int main()
             // conversion.
             ccapi::OS osenum;
             if (os == "windows")
-                osenum = ccapi::OS::windows;
+                osenum = ccapi::OS::Windows;
             else if (os == "linux")
-                osenum = ccapi::OS::linux;
+                osenum = ccapi::OS::Linux;
             else if (os == "macos")
-                osenum = ccapi::OS::macos;
+                osenum = ccapi::OS::Macos;
             else
             {
                 std::cerr << "Invalid OS.\n";
@@ -399,3 +399,4 @@ int main()
     }
     return 0;
 }
+
