@@ -4,7 +4,9 @@
 #include <vector>
 #include <optional>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include <curl/curl.h>
 #include <iostream>
 #include <fstream>
@@ -68,3 +70,4 @@ namespace ccapi
 
     bool StartProcess(const std::string& javapath, const std::string& args);
 }
+
