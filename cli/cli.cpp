@@ -314,8 +314,13 @@ int main()
 
             // launch minecraft.
             std::string javapath = "runtime/" + versionid + "/java/bin/java.exe";
+            #ifdef _WIN32
             bool launched = ccapi::StartProcess(javapath, launchcmd);
-
+            #else
+            std::cout << "StartProcess is not yet supported on linux or macos.\n";
+            bool launched = false;
+            #endif
+            
             if (!launched)
                 std::cout << "Failed to launch Minecraft.\n";
             else
@@ -399,4 +404,3 @@ int main()
     }
     return 0;
 }
-
