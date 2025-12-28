@@ -71,8 +71,7 @@ namespace ccapi
     #ifdef _WIN32
     bool StartProcess(const std::string& javapath, const std::string& args);
     #else
-    #warning "StartProcess is not yet supported on linux."
+    #warning "StartProcess is not yet supported on linux or macos."
     bool StartProcess(const std::string&, const std::string&) = delete;
     #endif
 }
-
