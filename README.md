@@ -18,6 +18,7 @@ This API is in WIP state.
 - Fabric support.
 - Natives downloading for older versions.
 - Server process starting.
+- Full linux support.
 
 *Windows only
 # Building
