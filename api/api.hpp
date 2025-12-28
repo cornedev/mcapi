@@ -68,6 +68,10 @@ namespace ccapi
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
 
+    #ifdef _WIN32
     bool StartProcess(const std::string& javapath, const std::string& args);
+    #else
+    #warning "StartProcess is not yet supported on linux."
+    bool StartProcess(const std::string&, const std::string&) = delete;
+    #endif
 }
-
