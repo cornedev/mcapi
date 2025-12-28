@@ -32,9 +32,9 @@ namespace ccapi
 
     enum class OS
     {
-        windows,
-        linux,
-        macos
+        Windows,
+        Linux,
+        Macos
     };
 
     enum class Arch
@@ -75,3 +75,4 @@ namespace ccapi
     bool StartProcess(const std::string&, const std::string&) = delete;
     #endif
 }
+
