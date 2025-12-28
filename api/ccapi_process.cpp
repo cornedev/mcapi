@@ -3,6 +3,7 @@
 namespace ccapi
 {
 
+#ifdef _WIN32
 bool StartProcess(const std::string& javapath, const std::string& args)
 {
     if (!std::filesystem::exists(javapath))
@@ -89,5 +90,6 @@ bool StartProcess(const std::string& javapath, const std::string& args)
     }).detach();
     return true;
 }
+#endif
 
 }
