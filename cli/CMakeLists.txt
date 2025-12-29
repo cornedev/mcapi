@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(ccapi_cli LANGUAGES CXX)
+
 find_package(LibArchive REQUIRED)
+if(NOT WIN32)
+    find_package(CURL REQUIRED)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,21 +40,30 @@ target_compile_options(ccapi_cli PRIVATE
     -Wextra
 )
 
-set(CURL_LIB ${RUNTIME_DIR}/lib/libcurl.dll.a)
+if(WIN32)
+    set(CURL_LIB ${RUNTIME_DIR}/lib/libcurl.dll.a)
+    target_link_libraries(ccapi_cli PRIVATE
+        ${CURL_LIB}
+        zip
+        LibArchive::LibArchive
+    )
+else()
+    target_link_libraries(ccapi_cli PRIVATE
+        CURL::libcurl
+        zip
+        LibArchive::LibArchive
+    )
+endif()
 
-target_link_libraries(ccapi_cli PRIVATE
-    ${CURL_LIB}
-    zip
-    LibArchive::LibArchive
-)
+if(WIN32)
+    file(GLOB RUNTIME_DLLS
+        "${RUNTIME_BIN_DIR}/*.dll"
+    )
 
-file(GLOB RUNTIME_DLLS
-    "${RUNTIME_BIN_DIR}/*.dll"
-)
-
-add_custom_command(TARGET ccapi_cli POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${RUNTIME_DLLS}
-            $<TARGET_FILE_DIR:ccapi_cli>
-    COMMENT "Copying runtime DLLs to build directory"
-)
+    add_custom_command(TARGET ccapi_cli POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${RUNTIME_DLLS}
+                $<TARGET_FILE_DIR:ccapi_cli>
+        COMMENT "Copying runtime dlls to build directory..."
+    )
+endif()
