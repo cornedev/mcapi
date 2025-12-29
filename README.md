@@ -36,7 +36,7 @@ This API is in WIP state.
    ```
 4. Build the application:
    ```sh
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+   cmake -S . -B build
    ```
    and then:
    ```sh
@@ -50,7 +50,7 @@ If you ever want to clean or rebuild:
    ```
    And run the build commands again.
 ### Linux
-Not yet supported.
+In the works...
 
 ### License
 All the code is licensed under the [MIT license](LICENSE).
