@@ -334,6 +334,7 @@ int main()
             std::cout << "Natives extracted.\n";
 
             // build classpath.
+            std::cout << "Building classpath...\n";
             auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, "versions/" + versionid + "/client.jar", osenum);
             if (!classpathopt)
             {
@@ -341,6 +342,7 @@ int main()
                 break;
             }
             auto classpath = *classpathopt;
+            std::cout << "Classpath built.\n";
 
             // build launch command.
             auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid);
@@ -452,3 +454,4 @@ int main()
     }
     return 0;
 }
+
