@@ -18,6 +18,7 @@ This API is in WIP state.
 ## Planned
 - Fabric support.
 - Server process starting.
+- A gui application using this API.
 
 # Building
 
