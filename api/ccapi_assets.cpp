@@ -3,6 +3,86 @@
 namespace ccapi
 {
 
+// - helpers
+static std::string GetOSNativesUrlName(OS os)
+{
+    switch (os)
+    {
+        case OS::Windows: return "windows";
+        case OS::Linux: return "linux";
+        case OS::Macos: return "macos";
+    }
+    return {};
+}
+
+std::string GetOSRuleName(OS os)
+{
+    switch (os)
+    {
+        case OS::Windows: return "windows";
+        case OS::Linux: return "linux";
+        case OS::Macos: return "osx";
+    }
+    return {};
+}
+
+static std::string GetArchSuffix(OS os, Arch arch)
+{
+    if (arch == Arch::x64)
+        return "";
+
+    if (arch == Arch::arm64)
+    {
+        switch (os)
+        {
+            case OS::Linux: return "-aarch_64";
+            case OS::Macos: return "-arm64";
+            case OS::Windows: return "-arm64";
+        }
+    }
+    return "";
+}
+
+static bool GetRuleAllow(const json& lib, OS os)
+{
+    if (!lib.contains("rules"))
+        return true;
+
+    bool allowed = false;
+    const std::string osname = GetOSRuleName(os);
+
+    for (const auto& rule : lib["rules"])
+    {
+        bool applies = true;
+
+        if (rule.contains("os"))
+        {
+            if (!rule["os"].contains("name"))
+                applies = false;
+            else
+                applies = (rule["os"]["name"] == osname);
+        }
+
+        if (applies)
+            allowed = (rule["action"] == "allow");
+    }
+    return allowed;
+}
+
+// this chooses if the version is modern or not (1.19 +/-)
+static bool GetVersionAllow(const std::string& versionid)
+{
+    int major = 0, minor = 0, patch = 0;
+    char dot;
+
+    std::stringstream ss(versionid);
+    ss >> major >> dot >> minor;
+    if (ss.peek() == '.')
+        ss >> dot >> patch;
+
+    return (major > 1) || (major == 1 && minor >= 19);
+}
+
 static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
 {
     auto* pair = static_cast<std::pair<std::string*, std::ofstream*>*>(userdata);
@@ -16,6 +96,7 @@ static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* us
 
     return total;
 }
+// - end helpers
 
 std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std::string& filename, const std::string& folder)
 {
@@ -211,7 +292,7 @@ std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl)
     return GET(wurl, GETmode::MemoryAndDisk, filename, indexdir.string());
 }
 
-std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson)
+std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson, OS os)
 {
     try
     {
@@ -222,6 +303,9 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDown
         std::vector<std::pair<std::string, std::string>> urls;
         for (const auto& lib : j["libraries"])
         {
+            if (!GetRuleAllow(lib, os))
+                continue;
+
             if (!lib.contains("downloads") || !lib["downloads"].contains("artifact"))
                 continue;
 
@@ -231,6 +315,10 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDown
 
             std::string url = artifact["url"];
             std::string path = artifact["path"];
+
+            if (url.find("natives") != std::string::npos)
+                continue;
+            
             urls.emplace_back(url, path);
         }
         return urls;
@@ -321,43 +409,82 @@ std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pa
         if (!result)
         {
             std::cout << "Failed to download asset: " << url << "\n";
-            return std::nullopt;
+            continue;
         }
         downloaded.push_back(fullpath.string());
     }
     return downloaded;
 }
 
-std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionjson)
+std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionid, const std::string& versionjson, OS os, Arch arch)
 {
     try
     {
+        if (arch != Arch::x64 && arch != Arch::arm64)
+        {
+            std::cout << "Unsupported architecture.\n";
+            return std::nullopt;
+        }
+        
         auto j = json::parse(versionjson);
         if (!j.contains("libraries"))
             return std::nullopt;
 
+        const bool modern = GetVersionAllow(versionid);
+        if (arch == Arch::arm64 && !modern)
+        {
+            std::cout << "arm64 is only supported for 1.19 and higher versions.\n";
+            return std::nullopt;
+        }
+
+        const std::string ruleos = GetOSRuleName(os);
+        const std::string artos = GetOSNativesUrlName(os);
+        const std::string archsuffix = GetArchSuffix(os, arch);
+
         std::vector<std::pair<std::string, std::string>> natives;
         for (const auto& lib : j["libraries"])
         {
+            if (!GetRuleAllow(lib, os))
+                continue;
+
             if (!lib.contains("downloads"))
                 continue;
 
             const auto& downloads = lib["downloads"];
-            if (!downloads.contains("classifiers"))
-                continue;
+            
+            if (!modern)
+            {
+                if (!lib.contains("natives") || !downloads.contains("classifiers"))
+                    continue;
 
-            const auto& classifiers = downloads["classifiers"];
-            if (!classifiers.contains("natives-windows"))
-                continue;
+                const auto& nativesmap = lib["natives"];
+                if (!nativesmap.contains(ruleos))
+                    continue;
 
-            const auto& native = classifiers["natives-windows"];
-            if (!native.contains("url") || !native.contains("path"))
-                continue;
+                std::string classifier = nativesmap[ruleos].get<std::string>() + archsuffix;
 
-            natives.emplace_back(
-                native["url"].get<std::string>(),
-                native["path"].get<std::string>()
-            );
+                const auto& classifiers = downloads["classifiers"];
+                if (!classifiers.contains(classifier))
+                    continue;
+
+                const auto& native = classifiers[classifier];
+                natives.emplace_back(native["url"].get<std::string>(), native["path"].get<std::string>());
+            }
+            else
+            {
+                if (!downloads.contains("artifact"))
+                    continue;
+                
+                if (downloads.contains("artifact"))
+                {
+                    const auto& artifact = downloads["artifact"];
+                    std::string path = artifact["path"].get<std::string>();
+                    if (path.find("natives-" + artos) != std::string::npos)
+                    {
+                        natives.emplace_back(artifact["url"].get<std::string>(), path);
+                    }
+                }
+            }
         }
         return natives;
     }
@@ -367,74 +494,114 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNati
     }
 }
 
-std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives)
+std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives)
+{
+    std::vector<std::string> downloaded;
+    for (const auto& [url, relpath] : natives)
+    {
+        fs::path fullpath = fs::path("libraries") / relpath;
+        fs::create_directories(fullpath.parent_path());
+        if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
+        {
+            downloaded.push_back(fullpath.string());
+            continue;
+        }
+
+        std::wstring wurl(url.begin(), url.end());
+        std::string filename = fullpath.filename().string();
+        std::string folder = fullpath.parent_path().string();
+
+        auto result = GET(wurl, GETmode::DiskOnly, filename, folder);
+        if (!result)
+        {
+            std::cout << "Failed to download native jar: " << url << "\n";
+            return std::nullopt;
+        }
+        downloaded.push_back(fullpath.string());
+    }
+    return downloaded;
+}
+
+std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, OS os)
 {
     std::vector<std::string> extracted;
     fs::create_directories("natives");
-    for (const auto& [url, relpath] : natives)
-    {
-        fs::path jarpath = fs::path("libraries") / relpath;
-        if (!fs::exists(jarpath))
-        {
-            std::cout << "Native jar missing: " << jarpath << "\n";
-            return std::nullopt;
-        }
 
-        int err = 0;
-        zip* archive = zip_open(jarpath.string().c_str(), 0, &err);
-        if (!archive)
+    std::string nativesext;
+    switch (os)
+    {
+        case OS::Windows: nativesext = ".dll"; break;
+        case OS::Macos: nativesext = ".dylib"; break;
+        case OS::Linux: nativesext = ".so"; break;
+        default:
+            std::cout << "Unsupported OS.\n";
+            return std::nullopt;
+    }
+
+    for (const auto& jarpath : nativesjars)
+    {
+        archive* ar = archive_read_new();
+        archive_read_support_filter_all(ar);
+        archive_read_support_format_zip(ar);
+
+        if (archive_read_open_filename(ar, jarpath.c_str(), 10240) != ARCHIVE_OK)
         {
             std::cout << "Failed to open native jar: " << jarpath << "\n";
+            archive_read_free(ar);
             return std::nullopt;
         }
 
-        zip_int64_t entries = zip_get_num_entries(archive, 0);
-        for (zip_int64_t i = 0; i < entries; ++i)
+        archive_entry* entry;
+        while (archive_read_next_header(ar, &entry) == ARCHIVE_OK)
         {
-            const char* name = zip_get_name(archive, i, 0);
-            if (!name)
-                continue;
-
+            const char* name = archive_entry_pathname(entry);
+            if (!name) { archive_read_data_skip(ar); continue; }
             std::string entryName(name);
-            if (entryName.size() < 4 || entryName.substr(entryName.size() - 4) != ".dll")
+
+            if (entryName.rfind("META-INF/", 0) == 0 || archive_entry_filetype(entry) == AE_IFDIR)
+            {
+                archive_read_data_skip(ar);
                 continue;
+            }
+
+            if (entryName.size() < nativesext.size() ||
+                entryName.substr(entryName.size() - nativesext.size()) != nativesext)
+            {
+                archive_read_data_skip(ar);
+                continue;
+            }
 
             fs::path outpath = fs::path("natives") / fs::path(entryName).filename();
             if (fs::exists(outpath) && fs::file_size(outpath) > 0)
             {
                 extracted.push_back(outpath.string());
+                archive_read_data_skip(ar);
                 continue;
             }
-
-            zip_file* file = zip_fopen_index(archive, i, 0);
-            if (!file)
-                continue;
-
-            zip_stat_t st{};
-            zip_stat_index(archive, i, 0, &st);
-
-            std::vector<char> buffer(st.size);
-            zip_fread(file, buffer.data(), buffer.size());
-            zip_fclose(file);
 
             std::ofstream out(outpath, std::ios::binary);
-            if (!out)
+            if (!out) { archive_read_free(ar); return std::nullopt; }
+
+            const void* buff;
+            size_t size;
+            la_int64_t offset;
+            while (true)
             {
-                zip_close(archive);
-                return std::nullopt;
+                int r = archive_read_data_block(ar, &buff, &size, &offset);
+                if (r == ARCHIVE_EOF) break;
+                if (r != ARCHIVE_OK) { archive_read_free(ar); return std::nullopt; }
+                out.write(static_cast<const char*>(buff), size);
             }
-
-            out.write(buffer.data(), buffer.size());
             out.close();
-
             extracted.push_back(outpath.string());
         }
-        zip_close(archive);
+        archive_read_close(ar);
+        archive_read_free(ar);
     }
     return extracted;
 }
 
-std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath)
+std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath, OS os)
 {
     try
     {
@@ -442,26 +609,33 @@ std::optional<std::string> GetClassPath(const std::string& versionjson, const st
         std::vector<std::string> jars;
         for (const auto& lib : libraries)
         {
-            if (!lib.empty())
-                jars.push_back(lib);
+            if (lib.empty())
+                continue;
+
+            if (lib.find("natives-") != std::string::npos)
+                continue;
+
+            fs::path p = fs::absolute(fs::path(lib)).make_preferred();
+            if (fs::exists(p))
+                jars.push_back(p.string());
         }
         fs::path clientjar = fs::absolute(fs::path(clientjarpath)).make_preferred();
         if (!fs::exists(clientjar))
-        {
             return std::nullopt;
-        }
+
         jars.push_back(clientjar.string());
+        if (jars.empty())
+            return std::nullopt;
+
+        const char sep = (os == OS::Windows) ? ';' : ':';
 
         std::string classpath;
         for (size_t i = 0; i < jars.size(); ++i)
         {
             classpath += jars[i];
             if (i + 1 < jars.size())
-                classpath += ";";
+                classpath += sep;
         }
-        if (jars.empty())
-            return std::nullopt;
-        
         return classpath;
     }
     catch (...)
