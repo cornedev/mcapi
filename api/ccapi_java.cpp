@@ -37,18 +37,12 @@ std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch)
         return std::nullopt;
     }
 
-    if (arch == Arch::arm64 && os == OS::Macos)
-    {
-        std::cout << "arm64 is not supported on Macos.\n";
-        return std::nullopt;
-    }
-
     const char* osStr = nullptr;
     switch (os)
     {
-        case OS::Windows: osStr = "Windows";
+        case OS::Windows: osStr = "windows";
         break;
-        case OS::Linux: osStr = "Linux";
+        case OS::Linux: osStr = "linux";
         break;
         case OS::Macos: osStr = "mac";
         break;
@@ -66,7 +60,7 @@ std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch)
             return std::nullopt;
     }
     std::string archStr = (arch == Arch::x64) ? "x64" : "aarch64";
-    return "https://api.adoptium.net/v3/binary/latest/" + std::to_string(javaversion) + "/ga/" + osStr + + "/" + archStr + "/jdk/hotspot/normal/eclipse";
+    return "https://api.adoptium.net/v3/binary/latest/" + std::to_string(javaversion) + "/ga/" + osStr + "/" + archStr + "/jdk/hotspot/normal/eclipse";
 }
 
 std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid)
