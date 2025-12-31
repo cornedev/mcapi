@@ -6,6 +6,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <unistd.h>
+#include <sys/wait.h>
 #endif
 #include <curl/curl.h>
 #include <iostream>
@@ -53,13 +56,14 @@ namespace ccapi
     std::optional<std::string> DownloadClientJar(const std::string& clienturl, const std::string& versionid);
     std::optional<std::string> GetAssetIndexJsonDownloadUrl(const std::string& versionjson);
     std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl);
-    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson);
+    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson, OS os);
     std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries);
     std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloadUrl(const std::string& assetindexjson);
     std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets);
-    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionjson);
-    std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives);
-    std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& librarypaths, const std::string& versionid);
+    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionid, const std::string& versionjson, OS os, Arch arch);
+    std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives);
+    std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, OS os);
+    std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath, OS os);
     std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid);
     std::optional<std::string> GetServerJarDownloadUrl(const std::string& versionjson);
     std::optional<std::string> DownloadServerJar(const std::string& serverurl, const std::string& versionid);
@@ -68,10 +72,5 @@ namespace ccapi
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
 
-    #ifdef _WIN32
-    bool StartProcess(const std::string& javapath, const std::string& args);
-    #else
-    #warning "StartProcess is not yet supported on linux or macos."
-    bool StartProcess(const std::string&, const std::string&) = delete;
-    #endif
+    bool StartProcess(const std::string& javapath, const std::string& args, OS os);
 }
