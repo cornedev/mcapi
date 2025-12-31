@@ -107,7 +107,7 @@ int main()
             auto assetsurlopt = ccapi::GetAssetsDownloadUrl(assetjson);
             if (!assetsurlopt)
             {
-                std::cout << "Failed to get assets download URLs.\n";
+                std::cout << "Failed to get assets download urls.\n";
                 break;
             }
 
@@ -259,14 +259,48 @@ int main()
             std::cout << "Version json downloaded.\n";
             auto versionjson = *versionjsonopt;
 
+            std::cout << "Enter OS (choose from: windows, linux, macos): ";
+            std::string os;
+            std::cin >> os;
+            std::cout << "Enter architecture (choose from: x64, x32, arm64): ";
+            std::string arch;
+            std::cin >> arch;
+
+            // conversion.
+            ccapi::OS osenum;
+            if (os == "windows")
+                osenum = ccapi::OS::Windows;
+            else if (os == "linux")
+                osenum = ccapi::OS::Linux;
+            else if (os == "macos")
+                osenum = ccapi::OS::Macos;
+            else
+            {
+                std::cerr << "Invalid OS.\n";
+                return 1;
+            }
+            ccapi::Arch archenum;
+            if (arch == "x64")
+                archenum = ccapi::Arch::x64;
+            else if (arch == "x32")
+                archenum = ccapi::Arch::x32;
+            else if (arch == "arm64")
+                archenum = ccapi::Arch::arm64;
+            else
+            {
+                std::cerr << "Invalid architecture.\n";
+                return 1;
+            }
+
             // download libraries.
-            auto librariesurlopt = ccapi::GetLibrariesDownloadUrl(versionjson);
+            auto librariesurlopt = ccapi::GetLibrariesDownloadUrl(versionjson, osenum);
             if (!librariesurlopt)
             {
                 std::cout << "Failed to get libraries.\n";
                 break;
             }
 
+            std::cout << "Downloading libraries...\n";
             auto librariesdownloaded = ccapi::DownloadLibraries(*librariesurlopt);
             if (!librariesdownloaded)
             {
@@ -276,14 +310,22 @@ int main()
             std::cout << "Libraries downloaded.\n";
 
             // extract natives.
-            auto nativesurlopt = ccapi::GetLibrariesNatives(versionjson);
+            std::cout << "Extracting natives...\n";
+            auto nativesurlopt = ccapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
             if (!nativesurlopt)
             {
-                std::cout << "Failed to get natives URLs.\n";
+                std::cout << "Failed to get natives urls.\n";
                 break;
             }
 
-            auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesurlopt);
+            auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt);
+            if (!nativesjarsopt)
+            {
+                std::cout << "Failed to download native jars.\n";
+                break;
+            }
+
+            auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesjarsopt, osenum);
             if (!nativesextracted)
             {
                 std::cout << "Failed to extract natives.\n";
@@ -292,7 +334,7 @@ int main()
             std::cout << "Natives extracted.\n";
 
             // build classpath.
-            auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, "versions/" + versionid + "/client.jar");
+            auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, "versions/" + versionid + "/client.jar", osenum);
             if (!classpathopt)
             {
                 std::cout << "Failed to build classpath.\n";
@@ -313,13 +355,19 @@ int main()
             auto launchcmd = *launchcmdopt;
 
             // launch minecraft.
-            std::string javapath = "runtime/" + versionid + "/java/bin/java.exe";
-            #ifdef _WIN32
-            bool launched = ccapi::StartProcess(javapath, launchcmd);
-            #else
-            std::cout << "StartProcess is not yet supported on linux or macos.\n";
-            bool launched = false;
-            #endif
+            std::string javapath;
+            switch (osenum)
+            {
+                case ccapi::OS::Windows:
+                    javapath = "runtime/" + versionid + "/java/bin/java.exe";
+                    break;
+
+                case ccapi::OS::Linux:
+                case ccapi::OS::Macos:
+                    javapath = "runtime/" + versionid + "/java/bin/java";
+                    break;
+            }
+            bool launched = ccapi::StartProcess(javapath, launchcmd, osenum);
             
             if (!launched)
                 std::cout << "Failed to launch Minecraft.\n";
