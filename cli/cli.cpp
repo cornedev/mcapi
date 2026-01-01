@@ -318,6 +318,7 @@ int main()
                 break;
             }
 
+            std::cout << "Downloading natives...\n";
             auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt);
             if (!nativesjarsopt)
             {
@@ -335,7 +336,8 @@ int main()
 
             // build classpath.
             std::cout << "Building classpath...\n";
-            auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, "versions/" + versionid + "/client.jar", osenum);
+            fs::path datapath = ".ccapi";
+            auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
             if (!classpathopt)
             {
                 std::cout << "Failed to build classpath.\n";
@@ -345,16 +347,15 @@ int main()
             std::cout << "Classpath built.\n";
 
             // build launch command.
+            std::cout << "Building launch command...\n";
             auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid);
             if (!launchcmdopt)
             {
                 std::cout << "Failed to build launch command.\n";
                 break;
             }
-
-            std::cout << "Launch command built.\n";
-
             auto launchcmd = *launchcmdopt;
+            std::cout << "Launch command built.\n";
 
             // launch minecraft.
             std::string javapath;
@@ -454,4 +455,3 @@ int main()
     }
     return 0;
 }
-
