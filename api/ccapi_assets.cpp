@@ -3,6 +3,8 @@
 namespace ccapi
 {
 
+static fs::path datapath = ".ccapi";
+
 // - helpers
 static std::string GetOSNativesUrlName(OS os)
 {
@@ -166,7 +168,8 @@ std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std:
 
 std::string DownloadVersionManifest()
 {
-    return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk).value_or("");
+    const fs::path manifestpath = datapath;
+    return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk, "", manifestpath.string()).value_or("");
 }
 
 std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifestjson, const std::string& versionid)
@@ -192,8 +195,8 @@ std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const
     if (jsonurl.empty())
         return std::nullopt;
 
-    const fs::path versionpath  = fs::path("versions") / versionid;
-    const fs::path jsonpath    = versionpath / (versionid + ".json");
+    const fs::path versionpath = datapath / "versions" / versionid;
+    const fs::path jsonpath = versionpath / (versionid + ".json");
 
     if (fs::exists(jsonpath))
     {
@@ -234,8 +237,8 @@ std::optional<std::string> DownloadClientJar(const std::string& clienturl, const
     if (clienturl.empty())
         return std::nullopt;
 
-    const fs::path clientpath = fs::path("versions") / versionid;
-    const fs::path jarpath   = clientpath / "client.jar";
+    const fs::path clientpath = datapath / "versions" / versionid;
+    const fs::path jarpath = clientpath / "client.jar";
     
     if (fs::exists(jarpath) && fs::file_size(jarpath) > 0)
     {
@@ -269,7 +272,7 @@ std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl)
     if (indexurl.empty())
         return std::nullopt;
     
-    const fs::path indexdir  = fs::path("assets") / "indexes";
+    const fs::path indexdir  = datapath / "assets" / "indexes";
     const auto slash = indexurl.find_last_of('/');
     if (slash == std::string::npos)
         return std::nullopt;
@@ -335,7 +338,7 @@ std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std:
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : libraries)
     {
-        fs::path fullpath = fs::path("libraries") / relpath;
+        fs::path fullpath = datapath / "libraries" / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -375,7 +378,7 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloa
 
             std::string hash = obj["hash"];
             std::string firsttwo = hash.substr(0, 2);
-            std::string url ="https://resources.download.minecraft.net/" + firsttwo + "/" + hash;
+            std::string url = "https://resources.download.minecraft.net/" + firsttwo + "/" + hash;
             std::string path = "assets/objects/" + firsttwo + "/" + hash;
             urls.emplace_back(url, path);
         }
@@ -393,7 +396,7 @@ std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pa
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : assets)
     {
-        fs::path fullpath = relpath;
+        fs::path fullpath = datapath / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -403,7 +406,7 @@ std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pa
 
         std::wstring wurl(url.begin(), url.end());
         std::string filename = fullpath.filename().string();
-        std::string folder   = fullpath.parent_path().string();
+        std::string folder = fullpath.parent_path().string();
 
         auto result = GET(wurl, GETmode::DiskOnly, filename, folder);
         if (!result)
@@ -499,7 +502,7 @@ std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vect
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : natives)
     {
-        fs::path fullpath = fs::path("libraries") / relpath;
+        fs::path fullpath = datapath / "libraries" / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -525,7 +528,7 @@ std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vect
 std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, OS os)
 {
     std::vector<std::string> extracted;
-    fs::create_directories("natives");
+    fs::create_directories(datapath / "natives");
 
     std::string nativesext;
     switch (os)
@@ -571,7 +574,7 @@ std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vecto
                 continue;
             }
 
-            fs::path outpath = fs::path("natives") / fs::path(entryName).filename();
+            fs::path outpath = datapath / "natives" / fs::path(entryName).filename();
             if (fs::exists(outpath) && fs::file_size(outpath) > 0)
             {
                 extracted.push_back(outpath.string());
@@ -657,9 +660,9 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
         if (j.contains("assets"))
             assetIndex = j["assets"].get<std::string>();
 
-        std::filesystem::path gameDir    = std::filesystem::absolute("versions/" + versionid);
-        std::filesystem::path assetsDir  = std::filesystem::absolute("assets");
-        std::filesystem::path nativesDir = std::filesystem::absolute("natives");
+        std::filesystem::path gameDir = std::filesystem::absolute(datapath / "versions" / versionid);
+        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / "assets");
+        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / "natives");
         std::filesystem::create_directories(gameDir);
         std::filesystem::create_directories(assetsDir);
         std::filesystem::create_directories(nativesDir);
@@ -710,7 +713,7 @@ std::optional<std::string> DownloadServerJar(const std::string& serverurl, const
     if (serverurl.empty())
         return std::nullopt;
 
-    const fs::path serverdir = fs::path("versions") / versionid / "server";
+    const fs::path serverdir = datapath / "versions" / versionid / "server";
     const fs::path jarpath   = serverdir / "server.jar";
 
     if (fs::exists(jarpath) && fs::file_size(jarpath) > 0)
