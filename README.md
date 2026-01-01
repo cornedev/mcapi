@@ -69,6 +69,8 @@ That's it. The executable will be in `/build/` and you can run it with:
    ./build/ccapi_cli
    ```
 
+<br>
+
 If you ever want to clean or rebuild (for both operating systems):
    ```sh
    rm -rf build
