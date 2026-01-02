@@ -21,8 +21,8 @@ This API is in WIP state.
 - Server process starting.
 - A gui application using this API.
 
-# Building
-
+## Building
+## cli
 ### Windows
 1. Download the latest version of [MSYS2](https://www.msys2.org/). After installation open the MINGW64 shell.
 2. Install the following dependencies:
@@ -76,6 +76,7 @@ If you ever want to clean or rebuild (for both operating systems):
    rm -rf build
    ```
    And run the build commands again.
-
+## gui
+WIP.
 ### License
 All the code is licensed under the [MIT license](LICENSE).
