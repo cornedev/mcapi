@@ -41,7 +41,7 @@ set(FONTS
 )
 
 set(GFX
-    ${GFX_DIR}/clilauncher.png
+    ${GFX_DIR}/ccapi_gui.png
     ${GFX_DIR}/bg_day.png
 )
 
