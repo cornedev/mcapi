@@ -1,4 +1,4 @@
-<p align="center"><img width="256px" src="cli/gfx/clilauncher.png"></p>
+<p align="center"><img width="256px" src="gfx/ccapi.png"></p>
 
 # ccapi
 An API for downloading minecraft assets.
