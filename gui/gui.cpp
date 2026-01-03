@@ -70,7 +70,7 @@ int main(int, char**)
     glfwMakeContextCurrent(mainwindow);
 
     int icon_width, icon_height, icon_channels;
-    unsigned char* icon_pixels = stbi_load("gfx/clilauncher.png", &icon_width, &icon_height, &icon_channels, 4);
+    unsigned char* icon_pixels = stbi_load("gfx/ccapi_gui.png", &icon_width, &icon_height, &icon_channels, 4);
     if (icon_pixels)
     {
         GLFWimage images[1];
@@ -179,3 +179,4 @@ int main(int, char**)
     glfwTerminate();
     return 0;
 }
+
