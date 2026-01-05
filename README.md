@@ -1,7 +1,7 @@
 <p align="center"><img width="256px" src="gfx/ccapi.png"></p>
 
 # ccapi
-An API for downloading minecraft assets.
+An API for downloading minecraft assets & launcher.
 
 This API is in WIP state.
 
