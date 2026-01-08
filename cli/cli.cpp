@@ -45,7 +45,7 @@ int main()
                 std::cout << "Failed to download manifest.\n";
                 break;
             }
-            std::cout << "Version manifest downloaded\n";
+            std::cout << "Version manifest downloaded.\n";
 
             // download version json.
             auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
@@ -393,7 +393,7 @@ int main()
                 std::cout << "Failed to download manifest.\n";
                 break;
             }
-            std::cout << "Version manifest downloaded";
+            std::cout << "Version manifest downloaded.\n";
 
             // download version json.
             auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
