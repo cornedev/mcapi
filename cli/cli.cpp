@@ -94,7 +94,7 @@ int main()
             auto indexurl = *indexurlopt;
 
             std::cout << "Downloading Asset index\n";
-            auto assetjsonopt = ccapi::DownloadAssetIndexJson(indexurl);
+            auto assetjsonopt = ccapi::DownloadAssetIndexJson(indexurl, versionid);
             if (!assetjsonopt)
             {
                 std::cout << "Failed to download asset index.\n";
@@ -112,7 +112,7 @@ int main()
             }
 
             std::cout << "Downloading assets... (this may take a while)\n";
-            auto assets = ccapi::DownloadAssets(*assetsurlopt);
+            auto assets = ccapi::DownloadAssets(*assetsurlopt, versionid);
             if (!assets)
             {
                 std::cout << "Failed to download assets.\n";
@@ -301,7 +301,7 @@ int main()
             }
 
             std::cout << "Downloading libraries...\n";
-            auto librariesdownloaded = ccapi::DownloadLibraries(*librariesurlopt);
+            auto librariesdownloaded = ccapi::DownloadLibraries(*librariesurlopt, versionid);
             if (!librariesdownloaded)
             {
                 std::cout << "Failed to download libraries.\n";
@@ -319,14 +319,14 @@ int main()
             }
 
             std::cout << "Downloading natives...\n";
-            auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt);
+            auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
             if (!nativesjarsopt)
             {
                 std::cout << "Failed to download native jars.\n";
                 break;
             }
 
-            auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesjarsopt, osenum);
+            auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
             if (!nativesextracted)
             {
                 std::cout << "Failed to extract natives.\n";
