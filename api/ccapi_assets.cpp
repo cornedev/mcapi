@@ -267,12 +267,12 @@ std::optional<std::string> GetAssetIndexJsonDownloadUrl(const std::string& versi
     }
 }
 
-std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl)
+std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl, const std::string& versionid)
 {
     if (indexurl.empty())
         return std::nullopt;
     
-    const fs::path indexdir  = datapath / "assets" / "indexes";
+    const fs::path indexdir  = datapath / versionid / "assets" / "indexes";
     const auto slash = indexurl.find_last_of('/');
     if (slash == std::string::npos)
         return std::nullopt;
@@ -333,12 +333,12 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDown
     return std::nullopt;
 }
 
-std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries)
+std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries, const std::string& versionid)
 {
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : libraries)
     {
-        fs::path fullpath = datapath / "libraries" / relpath;
+        fs::path fullpath = datapath / "libraries" / versionid / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -391,12 +391,12 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloa
     return std::nullopt;
 }
 
-std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets)
+std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets, const std::string& versionid)
 {
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : assets)
     {
-        fs::path fullpath = datapath / relpath;
+        fs::path fullpath = datapath / versionid / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -497,12 +497,12 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNati
     }
 }
 
-std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives)
+std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives, const std::string& versionid)
 {
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : natives)
     {
-        fs::path fullpath = datapath / "libraries" / relpath;
+        fs::path fullpath = datapath / "libraries" / versionid / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -525,10 +525,10 @@ std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vect
     return downloaded;
 }
 
-std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, OS os)
+std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, const std::string& versionid, OS os)
 {
     std::vector<std::string> extracted;
-    fs::create_directories(datapath / "natives");
+    fs::create_directories(datapath / "natives" / versionid);
 
     std::string nativesext;
     switch (os)
@@ -574,7 +574,7 @@ std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vecto
                 continue;
             }
 
-            fs::path outpath = datapath / "natives" / fs::path(entryName).filename();
+            fs::path outpath = datapath / "natives" / versionid / fs::path(entryName).filename();
             if (fs::exists(outpath) && fs::file_size(outpath) > 0)
             {
                 extracted.push_back(outpath.string());
@@ -661,8 +661,8 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             assetIndex = j["assets"].get<std::string>();
 
         std::filesystem::path gameDir = std::filesystem::absolute(datapath / "versions" / versionid);
-        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / "assets");
-        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / "natives");
+        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / versionid / "assets");
+        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / versionid / "natives");
         std::filesystem::create_directories(gameDir);
         std::filesystem::create_directories(assetsDir);
         std::filesystem::create_directories(nativesDir);
