@@ -18,6 +18,7 @@ std::optional<int> GetJavaVersion(const std::string& versionjson)
             case 16:
             case 17:
             case 21:
+            case 25:
                 return major;
             default:
                 return std::nullopt;
@@ -55,6 +56,7 @@ std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch)
         case 16:
         case 17:
         case 21:
+        case 25:
             break;
         default:
             return std::nullopt;
