@@ -2,7 +2,9 @@
 
 # ccapi
 An API for downloading minecraft assets & launcher.
+
 This API is in WIP state.
+
 The goal of this project is to create an easy-use API for downloading all sorts of assets from mojangs servers, and to create a lightweight launcher that can be used anywhere.
 
 ## Features
