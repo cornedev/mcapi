@@ -47,6 +47,12 @@ namespace ccapi
         arm64
     };
 
+    #ifdef _WIN32
+    using Processhandle = HANDLE;
+    #else
+    using Processhandle = pid_t;
+    #endif
+
     std::optional<std::string> GET(const std::wstring& url, GETmode mode = GETmode::MemoryOnly, const std::string& filename = "", const std::string& folder = "");
     
     std::string DownloadVersionManifest();
@@ -72,5 +78,6 @@ namespace ccapi
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
 
-    bool StartProcess(const std::string& javapath, const std::string& args, OS os);
+    bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
+    bool StopProcess(Processhandle* process);
 }
