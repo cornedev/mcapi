@@ -3,6 +3,7 @@
 #include <fstream>
 #include "../api/api.hpp"
 
+static ccapi::Processhandle process{};
 int main()
 {
     curl_version_info_data* info = curl_version_info(CURLVERSION_NOW);
@@ -370,7 +371,7 @@ int main()
                     javapath = "runtime/" + versionid + "/java/bin/java";
                     break;
             }
-            bool launched = ccapi::StartProcess(javapath, launchcmd, osenum);
+            bool launched = ccapi::StartProcess(javapath, launchcmd, osenum, &process);
             
             if (!launched)
                 std::cout << "Failed to launch Minecraft.\n";
