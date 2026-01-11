@@ -3,7 +3,7 @@
 namespace ccapi
 {
 
-bool StartProcess(const std::string& javapath, const std::string& args, OS os)
+bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process)
 {
     if (!std::filesystem::exists(javapath))
     {
@@ -67,6 +67,8 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os)
                 std::cout << "Failed to start Java.\n";
                 return false;
             }
+            *process = pi.hProcess;
+            CloseHandle(pi.hThread);
 
             std::thread([outRead]() {
                 char buf[1024];
@@ -88,12 +90,6 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os)
                     std::cout << buf;
                 }
                 CloseHandle(errRead);
-            }).detach();
-
-            std::thread([pi]() {
-                WaitForSingleObject(pi.hProcess, INFINITE);
-                CloseHandle(pi.hProcess);
-                CloseHandle(pi.hThread);
             }).detach();
 
             return true;
@@ -143,6 +139,7 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os)
                 execl("/bin/sh", "sh", "-c", cmd.c_str(), (char*)nullptr);
                 _exit(1);
             }
+            *process = pid;
 
             close(outPipe[1]);
             close(errPipe[1]);
@@ -163,11 +160,6 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os)
                 close(fd);
             }).detach();
 
-            std::thread([pid]() {
-                int status;
-                waitpid(pid, &status, 0);
-            }).detach();
-
             return true;
             #else
             std::cout << "Please choose the correct OS.\n";
@@ -176,6 +168,33 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os)
         }
     }
     return false;
+}
+
+bool StopProcess(Processhandle* process)
+{
+    #ifdef _WIN32
+    if (!process || !*process)
+        return false;
+
+    DWORD exitcode = 0;
+    if (!GetExitCodeProcess(*process, &exitcode))
+        return false;
+
+    if (exitcode != STILL_ACTIVE)
+        return false;
+
+    TerminateProcess(*process, 0);
+    CloseHandle(*process);
+    return true;
+    #else
+    if (!process || *process <= 0)
+        return false;
+
+    if (kill(*process, SIGTERM) != 0)
+        return false;
+
+    return true;
+    #endif
 }
 
 }
