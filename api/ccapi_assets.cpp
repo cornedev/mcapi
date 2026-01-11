@@ -172,6 +172,31 @@ std::string DownloadVersionManifest()
     return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk, "", manifestpath.string()).value_or("");
 }
 
+std::optional<std::vector<std::string>> GetVersionsFromManifest(const std::string& manifestjson)
+{
+    try
+    {
+        auto j = json::parse(manifestjson);
+        if (!j.contains("versions") || !j["versions"].is_array())
+            return std::nullopt;
+
+        std::vector<std::string> ids;
+        ids.reserve(j["versions"].size());
+        for (const auto& versions : j["versions"])
+        {
+            if (!versions.contains("id") || !versions["id"].is_string())
+                continue;
+
+            ids.emplace_back(versions["id"].get<std::string>());
+        }
+        return ids;
+    }
+    catch (...)
+    {
+        return std::nullopt;
+    }
+}
+
 std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifestjson, const std::string& versionid)
 {
     try
