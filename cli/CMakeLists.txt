@@ -48,13 +48,11 @@ if(WIN32)
     set(CURL_LIB ${RUNTIME_DIR}/lib/libcurl.dll.a)
     target_link_libraries(ccapi_cli PRIVATE
         ${CURL_LIB}
-        zip
         LibArchive::LibArchive
     )
 else()
     target_link_libraries(ccapi_cli PRIVATE
         CURL::libcurl
-        zip
         LibArchive::LibArchive
     )
 endif()
@@ -71,4 +69,3 @@ if(WIN32)
         COMMENT "Copying runtime dlls to build directory..."
     )
 endif()
-
