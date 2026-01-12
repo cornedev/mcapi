@@ -51,8 +51,8 @@ jobs:
 
       - name: configure cmake
         run: |
-          cmake -S cli -B cli/build
-          export CMAKE_PREFIX_PATH="$(brew --prefix)"
+          cmake -S cli -B cli/build \
+            -DLibArchive_ROOT="$(brew --prefix libarchive)"
 
       - name: build project
         run: cmake --build cli/build
