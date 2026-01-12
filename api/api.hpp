@@ -18,7 +18,6 @@
 #include <filesystem>
 #include <functional>
 namespace fs = std::filesystem;
-#include <zip.h>
 #include <archive.h>
 #include <archive_entry.h>
 #include <nlohmann/json.hpp>
@@ -82,4 +81,5 @@ namespace ccapi
     bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
     bool StopProcess(Processhandle* process);
 }
+
 
