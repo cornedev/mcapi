@@ -30,7 +30,8 @@ jobs:
           sudo apt-get install -y \
             cmake \
             libarchive-dev \
-            curl
+            curl \
+            nlohmann-json3-dev
 
       - name: configure cmake
         run: cmake -S cli -B cli/build
@@ -46,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: install dependencies
-        run: brew install libarchive curl
+        run: brew install libarchive curl nlohmann-json
 
       - name: configure cmake
         run: cmake -S cli -B cli/build
@@ -70,6 +71,7 @@ jobs:
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-libarchive
             mingw-w64-x86_64-curl
+            mingw-w64-x86_64-nlohmann-json
       - name: build project
         shell: msys2 {0}
         run: |
