@@ -1,0 +1,77 @@
+name: build ccapi_cli
+
+on:
+  push:
+    branches: main
+    paths:
+      - .github/workflows/*
+      - '**/**/CMakeLists.txt'
+      - '**/**/*.cpp'
+      - '**/**/*.hpp'
+  pull_request:
+    branches: main
+    paths:
+      - .github/workflows/*
+      - '**/**/CMakeLists.txt'
+      - '**/**/*.cpp'
+      - '**/**/*.hpp'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            libarchive-dev \
+            curl
+
+      - name: configure cmake
+        run: cmake -S cli -B cli/build
+
+      - name: build project
+        run: cmake --build cli/build
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: brew install libarchive curl
+
+      - name: configure cmake
+        run: cmake -S cli -B cli/build
+
+      - name: build project
+        run: cmake --build cli/build
+
+  build-windows-mingw:
+    runs-on: windows-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      - name: setup MSYS2
+        uses: msys2/setup-msys2@v3
+        with:
+          update: true
+          install: >
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-libarchive
+            mingw-w64-x86_64-curl
+      - name: build project
+        shell: msys2 {0}
+        run: |
+          cmake -S cli -B cli/build -G "MinGW Makefiles"
+          cmake --build cli/build
