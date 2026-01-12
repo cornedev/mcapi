@@ -8,7 +8,7 @@ This API is in WIP state.
 The goal of this project is to create an easy-use API for downloading all sorts of assets from mojangs servers, and to create a lightweight launcher that can be used anywhere.
 
 ## Features
-- Simple API
+- API
     - Version json downloading.
     - Client jar downloading.
     - Assets downloading.
@@ -22,6 +22,7 @@ The goal of this project is to create an easy-use API for downloading all sorts 
 - Fabric support.
 - Server process starting.
 - A gui application using this API.
+- Official Microsoft account authentication with mojang servers.
 
 ## Building
 ## cli
@@ -29,7 +30,6 @@ The goal of this project is to create an easy-use API for downloading all sorts 
 1. Download the latest version of [MSYS2](https://www.msys2.org/). After installation open the MINGW64 shell.
 2. Install the following dependencies:
     ```sh
-    pacman -S mingw-w64-x86_64-libzip
     pacman -S mingw-w64-x86_64-libarchive
     pacman -S mingw-w64-x86_64-nlohmann-json
     ```
@@ -52,7 +52,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 1. Get the following dependencies on your system:
    - [nlohmann/json](https://github.com/nlohmann/json)
    - [libarchive](https://github.com/libarchive/libarchive)
-   - [libzip](https://github.com/winlibs/libzip)
+
 2. Clone this repository:
    ```sh
    git clone https://github.com/cornedev/ccapi.git
