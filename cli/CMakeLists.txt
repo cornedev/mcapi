@@ -20,7 +20,11 @@ set(SOURCES
     ../api/ccapi_java.cpp
 )
 
-set(ICON_RC gfx/icon.rc)
+if(WIN32)
+    set(ICON_RC gfx/icon.rc)
+else()
+    set(ICON_RC "")
+endif()
 
 add_executable(ccapi_cli
     ${SOURCES}
@@ -67,3 +71,4 @@ if(WIN32)
         COMMENT "Copying runtime dlls to build directory..."
     )
 endif()
+
