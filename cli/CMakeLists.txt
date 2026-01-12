@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(ccapi_cli LANGUAGES CXX)
 
+find_package(nlohmann_json REQUIRED)
 find_package(LibArchive REQUIRED)
 if(NOT WIN32)
     find_package(CURL REQUIRED)
@@ -49,11 +50,13 @@ if(WIN32)
     target_link_libraries(ccapi_cli PRIVATE
         ${CURL_LIB}
         LibArchive::LibArchive
+        nlohmann_json::nlohmann_json
     )
 else()
     target_link_libraries(ccapi_cli PRIVATE
         CURL::libcurl
         LibArchive::LibArchive
+        nlohmann_json::nlohmann_json
     )
 endif()
 
