@@ -81,5 +81,3 @@ namespace ccapi
     bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
     bool StopProcess(Processhandle* process);
 }
-
-
