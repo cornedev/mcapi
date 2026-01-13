@@ -357,7 +357,7 @@ int main(int, char**)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    GLFWwindow* mainwindow = glfwCreateWindow(900, 900, "ccapi launcher", nullptr, nullptr);
+    GLFWwindow* mainwindow = glfwCreateWindow(900, 900, "ccapi_gui_launcher", nullptr, nullptr);
     if (mainwindow == nullptr) return 1;
     glfwMakeContextCurrent(mainwindow);
 
