@@ -4,6 +4,7 @@ project(cclauncher LANGUAGES CXX)
 
 find_package(glfw3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(nlohmann_json REQUIRED)
 find_package(LibArchive REQUIRED)
 if(NOT WIN32)
     find_package(CURL REQUIRED)
@@ -34,16 +35,11 @@ set(SOURCES
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 )
 
-set(ICON_RC gfx/icon.rc)
-
-set(FONTS
-    ${FONT_DIR}/arial.ttf
-)
-
-set(GFX
-    ${GFX_DIR}/ccapi_gui.png
-    ${GFX_DIR}/bg_day.png
-)
+if(WIN32)
+    set(ICON_RC gfx/icon.rc)
+else()
+    set(ICON_RC "")
+endif()
 
 add_executable(cclauncher
     ${SOURCES}
@@ -69,8 +65,8 @@ if (WIN32)
     set(CURL_LIB ${RUNTIME_DIR}/lib/libcurl.dll.a)
     target_link_libraries(cclauncher PRIVATE
         ${CURL_LIB}
-        zip
         LibArchive::LibArchive
+        nlohmann_json::nlohmann_json
         glfw
         opengl32
         gdi32
@@ -79,8 +75,8 @@ if (WIN32)
 elseif(APPLE)
     target_link_libraries(cclauncher PRIVATE
         CURL::libcurl
-        zip
         LibArchive::LibArchive
+        nlohmann_json::nlohmann_json
         glfw
         OpenGL::GL
         "-framework Cocoa"
@@ -90,12 +86,15 @@ elseif(APPLE)
 else()
     target_link_libraries(cclauncher PRIVATE
         CURL::libcurl
-        zip
         LibArchive::LibArchive
+        nlohmann_json::nlohmann_json
         glfw
         OpenGL::GL
     )
 endif()
+
+file(GLOB FONTS "${FONT_DIR}/*.ttf")
+file(GLOB GFX  "${GFX_DIR}/*.png")
 
 add_custom_command(TARGET cclauncher POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory
@@ -109,8 +108,6 @@ add_custom_command(TARGET cclauncher POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${GFX}
             $<TARGET_FILE_DIR:cclauncher>/gfx
-            
-    COMMENT "Copying files to build directory..."
 )
 
 if(WIN32)
