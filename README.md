@@ -35,7 +35,7 @@ The goal of this project is to create an easy-use API for downloading all sorts 
     ```
 3. Clone this repository:
    ```sh
-   git clone https://github.com/cornedev/ccapi.git
+   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
    cd ccapi/cli
    ```
 4. Build the application:
@@ -55,7 +55,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 
 2. Clone this repository:
    ```sh
-   git clone https://github.com/cornedev/ccapi.git
+   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
    cd ccapi/cli
    ```
 3. Build the application:
