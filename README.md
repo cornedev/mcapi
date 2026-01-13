@@ -32,7 +32,7 @@ The goal of this project is to create an easy-use API for downloading all sorts 
     ```sh
     pacman -S mingw-w64-x86_64-libarchive
     pacman -S mingw-w64-x86_64-nlohmann-json
-    mingw-w64-x86_64-cmake
+    pacman -S mingw-w64-x86_64-cmake
     ```
 3. Clone this repository:
    ```sh
@@ -79,8 +79,8 @@ That's it. The executable will be in `/build/` and you can run it with:
     ```sh
     pacman -S mingw-w64-x86_64-libarchive
     pacman -S mingw-w64-x86_64-nlohmann-json
-    mingw-w64-x86_64-glfw
-    mingw-w64-x86_64-cmake
+    pacman -S mingw-w64-x86_64-glfw
+    pacman -S mingw-w64-x86_64-cmake
     ```
 3. Clone this repository:
    ```sh
