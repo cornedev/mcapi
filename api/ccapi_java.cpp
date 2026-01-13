@@ -21,7 +21,7 @@ std::optional<int> GetJavaVersion(const std::string& versionjson)
             case 25:
                 return major;
             default:
-                return std::nullopt;
+                return 8;
         }
     }
     catch (...)
