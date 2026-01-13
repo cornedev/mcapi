@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: install dependencies
         run: brew install libarchive nlohmann-json glfw
@@ -67,6 +69,8 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: setup MSYS2
         uses: msys2/setup-msys2@v2
