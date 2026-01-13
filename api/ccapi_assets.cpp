@@ -686,8 +686,8 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             assetIndex = j["assets"].get<std::string>();
 
         std::filesystem::path gameDir = std::filesystem::absolute(datapath / "versions" / versionid);
-        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / versionid / "assets");
-        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / versionid / "natives");
+        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / "assets" / versionid);
+        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / "natives" / versionid);
         std::filesystem::create_directories(gameDir);
         std::filesystem::create_directories(assetsDir);
         std::filesystem::create_directories(nativesDir);
