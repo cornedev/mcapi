@@ -8,10 +8,12 @@ std::optional<int> GetJavaVersion(const std::string& versionjson)
     try
     {
         auto j = json::parse(versionjson);
-        if (!j.contains("javaVersion") || !j["javaVersion"].contains("majorVersion"))
-            return std::nullopt;
             
-        int major = j["javaVersion"]["majorVersion"].get<int>();
+        int major = 8;
+        if (j.contains("javaVersion") && j["javaVersion"].contains("majorVersion"))
+        {
+            major = j["javaVersion"]["majorVersion"].get<int>();
+        }
         switch (major)
         {
             case 8:
@@ -26,7 +28,7 @@ std::optional<int> GetJavaVersion(const std::string& versionjson)
     }
     catch (...)
     {
-        return std::nullopt;
+        return 8;
     }
 }
 
