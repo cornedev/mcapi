@@ -131,5 +131,9 @@ If you ever want to clean or rebuild (for both applications):
    ```
    And run the build commands again.
 
-### License
+## Showcase
+### gui launcher
+![ccapi_gui](gfx/ccapi_gui_showcase.png)
+
+## License
 All the code is licensed under the [MIT license](LICENSE).
