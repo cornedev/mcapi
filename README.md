@@ -133,7 +133,7 @@ If you ever want to clean or rebuild (for both applications):
 
 ## Showcase
 ### gui launcher
-![ccapi_gui](gfx/ccapi_gui_showcase.png)
+<img src="gfx/ccapi_gui_showcase.png" alt="ccapi_gui" width="450">
 
 ## License
 All the code is licensed under the [MIT license](LICENSE).
