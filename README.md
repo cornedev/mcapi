@@ -132,6 +132,8 @@ If you ever want to clean or rebuild (for both applications):
    And run the build commands again.
 
 ## Showcase
+### cli launcher
+<img src="gfx/ccapi_cli_showcase.png" alt="ccapi_cli" width="500">
 ### gui launcher
 <img src="gfx/ccapi_gui_showcase.png" alt="ccapi_gui" width="450">
 
