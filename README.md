@@ -138,7 +138,7 @@ If you ever want to clean or rebuild (for both applications):
 ### gui launcher
 <img src="gfx/mcapi_gui_showcase.png" alt="mcapi_gui" width="450">
 
-Note that these images can be out of date, I don't update them with every added feature. For example the "launch minecraft" option in the cli application has the windows only mark on the image while it's already cross-platform by now.
+Note: these showcase images are outdated!
 
 ## License
 All the code is licensed under the [MIT license](LICENSE).
