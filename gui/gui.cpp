@@ -238,7 +238,7 @@ namespace cclauncher
 
         // build launch command.
         Log("Building launch command...\n");
-        auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid);
+        auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
         if (!launchcmdopt)
         {
             Log("Failed to build launch command.\n");
