@@ -1,6 +1,6 @@
 <p align="center"><img width="256px" src="gfx/mcapi.png"></p>
 
-# ccapi
+# mcapi
 An API for downloading minecraft assets & launcher.
 
 This API is in WIP state.
@@ -36,8 +36,8 @@ The goal of this project is to create an easy-use API for downloading all sorts 
     ```
 3. Clone this repository:
    ```sh
-   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
-   cd ccapi/cli
+   git clone --recurse-submodules https://github.com/cornedev/mcapi.git
+   cd mcapi/cli
    ```
 4. Build the application:
    ```sh
@@ -56,8 +56,8 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 
 2. Clone this repository:
    ```sh
-   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
-   cd ccapi/cli
+   git clone --recurse-submodules https://github.com/cornedev/mcapi.git
+   cd mcapi/cli
    ```
 3. Build the application:
    ```sh
@@ -69,7 +69,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
    ```
 That's it. The executable will be in `/build/` and you can run it with:
    ```sh
-   ./build/ccapi_cli
+   ./build/mcapi_cli
    ```
 
 ## gui
@@ -84,8 +84,8 @@ That's it. The executable will be in `/build/` and you can run it with:
     ```
 3. Clone this repository:
    ```sh
-   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
-   cd ccapi/gui
+   git clone --recurse-submodules https://github.com/cornedev/mcapi.git
+   cd mcapi/gui
    ```
 4. Build the application:
    ```sh
@@ -107,8 +107,8 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 
 2. Clone this repository:
    ```sh
-   git clone --recurse-submodules https://github.com/cornedev/ccapi.git
-   cd ccapi/gui
+   git clone --recurse-submodules https://github.com/cornedev/mcapi.git
+   cd mcapi/gui
    ```
 3. Build the application:
    ```sh
@@ -120,7 +120,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
    ```
 That's it. The executable will be in `/build/` and you can run it with:
    ```sh
-   ./build/ccapi_gui
+   ./build/mcapi_gui
    ```
 
 <br>
@@ -133,10 +133,10 @@ If you ever want to clean or rebuild (for both applications):
 
 ## Showcase
 ### cli launcher
-<img src="gfx/ccapi_cli_showcase.png" alt="ccapi_cli" width="500">
+<img src="gfx/mcapi_cli_showcase.png" alt="mcapi_cli" width="500">
 
 ### gui launcher
-<img src="gfx/ccapi_gui_showcase.png" alt="ccapi_gui" width="450">
+<img src="gfx/mcapi_gui_showcase.png" alt="mcapi_gui" width="450">
 
 Note that these images can be out of date, I don't update them with every added feature. For example the "launch minecraft" option in the cli application has the windows only mark on the image while it's already cross-platform by now.
 
