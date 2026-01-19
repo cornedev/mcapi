@@ -59,19 +59,26 @@ static bool GetRuleAllow(const json& lib, OS os)
 
         if (rule.contains("os"))
         {
-            if (!rule["os"].contains("name"))
-                applies = false;
-            else
-                applies = (rule["os"]["name"] == osname);
+            const auto& osrule = rule["os"];
+
+            if (osrule.contains("name"))
+                applies &= (osrule["name"] == osname);
+        }
+
+        // Feature-based rules (ignored unless implemented)
+        if (rule.contains("features"))
+        {
+            applies = false;
         }
 
         if (applies)
             allowed = (rule["action"] == "allow");
     }
+
     return allowed;
 }
 
-// this chooses if the version is modern or not (1.19 +/-)
+// - this chooses if the version is modern or not (1.19 +/-)
 static bool GetVersionAllow(const std::string& versionid)
 {
     int major = 0, minor = 0, patch = 0;
@@ -83,6 +90,42 @@ static bool GetVersionAllow(const std::string& versionid)
         ss >> dot >> patch;
 
     return (major > 1) || (major == 1 && minor >= 19);
+}
+
+static std::string GetReplacedArgs(std::string str, const argsmap& vars)
+{
+    for (const auto& [key, value] : vars)
+    {
+        std::string token = "${" + key + "}";
+        size_t pos;
+        while ((pos = str.find(token)) != std::string::npos)
+            str.replace(pos, token.size(), value);
+    }
+    return str;
+}
+
+static void GetArgsAppend(const json& node, std::vector<std::string>& out, const argsmap& vars, OS os)
+{
+    if (!GetRuleAllow(node, os)) 
+        return;
+
+    if (node.is_string()) 
+    {
+        out.push_back(GetReplacedArgs(node.get<std::string>(), vars));
+    }
+    else if (node.is_object() && node.contains("value")) 
+    {
+        const auto& value = node["value"];
+        if (value.is_string()) 
+        {
+            out.push_back(GetReplacedArgs(value.get<std::string>(), vars));
+        } 
+        else if (value.is_array()) 
+        {
+            for (const auto& v : value)
+                out.push_back(GetReplacedArgs(v.get<std::string>(), vars));
+        }
+    }
 }
 
 static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
@@ -363,7 +406,7 @@ std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std:
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : libraries)
     {
-        fs::path fullpath = datapath / "libraries" / versionid / relpath;
+        fs::path fullpath = datapath / versionid / "libraries" / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -527,7 +570,7 @@ std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vect
     std::vector<std::string> downloaded;
     for (const auto& [url, relpath] : natives)
     {
-        fs::path fullpath = datapath / "libraries" / versionid / relpath;
+        fs::path fullpath = datapath / versionid / "libraries" / relpath;
         fs::create_directories(fullpath.parent_path());
         if (fs::exists(fullpath) && fs::file_size(fullpath) > 0)
         {
@@ -553,7 +596,7 @@ std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vect
 std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, const std::string& versionid, OS os)
 {
     std::vector<std::string> extracted;
-    fs::create_directories(datapath / "natives" / versionid);
+    fs::create_directories(datapath / versionid / "natives");
 
     std::string nativesext;
     switch (os)
@@ -672,7 +715,7 @@ std::optional<std::string> GetClassPath(const std::string& versionjson, const st
     }
 }
 
-std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid)
+std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os)
 {
     try
     {
@@ -681,32 +724,74 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             return std::nullopt;
 
         std::string mainClass = j["mainClass"];
-        std::string assetIndex = versionid;
-        if (j.contains("assets"))
-            assetIndex = j["assets"].get<std::string>();
 
-        std::filesystem::path gameDir = std::filesystem::absolute(datapath / "versions" / versionid);
-        std::filesystem::path assetsDir = std::filesystem::absolute(datapath / "assets" / versionid);
-        std::filesystem::path nativesDir = std::filesystem::absolute(datapath / "natives" / versionid);
-        std::filesystem::create_directories(gameDir);
-        std::filesystem::create_directories(assetsDir);
-        std::filesystem::create_directories(nativesDir);
+        std::filesystem::path gamedir = datapath / "versions" / versionid;
+        std::filesystem::path assetsdir = datapath / versionid / "assets";
+        std::filesystem::path nativesdir = datapath / "natives" / versionid;
+        std::filesystem::create_directories(gamedir);
+        std::filesystem::create_directories(nativesdir);
 
-        std::string cmd;
-        cmd.reserve(2048);
-        cmd += "-Xmx2G -Xms1G ";
-        cmd += "-Djava.library.path=\"" + nativesDir.string() + "\" ";
-        cmd += "-cp \"" + classpath + "\" ";
-        cmd += mainClass + " ";
-        cmd += "--username " + username + " ";
-        cmd += "--version " + versionid + " ";
-        cmd += "--gameDir \"" + gameDir.string() + "\" ";
-        cmd += "--assetsDir \"" + assetsDir.string() + "\" ";
-        cmd += "--assetIndex " + assetIndex + " ";
-        cmd += "--uuid 00000000-0000-0000-0000-000000000000 ";
-        cmd += "--accessToken 0 ";
-        cmd += "--userType mojang";
-        return cmd;
+        argsmap vars = {
+            {"auth_player_name", username},
+            {"version_name", versionid},
+            {"game_directory", gamedir.string()},
+            {"assets_root", assetsdir.string()},
+            {"game_assets", assetsdir.string()},
+            {"assets_index_name", j.value("assets", versionid)},
+            {"auth_uuid", "00000000-0000-0000-0000-000000000000"},
+            {"auth_access_token", "0"},
+            {"user_type", "mojang"},
+            {"version_type", j.value("type", "release")},
+            {"classpath", classpath},
+            {"natives_directory", nativesdir.string()},
+            {"launcher_name", "ccapi"},
+            {"launcher_version", "1.0"}
+        };
+        std::vector<std::string> jvmargs;
+        std::vector<std::string> gameargs;
+
+        // - lambda helpers
+        auto Getquotes = [](const std::string& str) -> std::string 
+        {
+            if (str.find(' ') != std::string::npos || str.find('"') != std::string::npos)
+                return "\"" + str + "\"";
+            return str;
+        };
+        auto ParseArgs = [](const json& args, std::vector<std::string>& jvm, std::vector<std::string>& game, const argsmap& vars, OS os)
+        {
+            if (args.contains("jvm")) {
+                for (const auto& arguments : args["jvm"])
+                    GetArgsAppend(arguments, jvm, vars, os);
+            }
+            if (args.contains("game")) {
+                for (const auto& arguments : args["game"])
+                    GetArgsAppend(arguments, game, vars, os);
+            }
+        };
+        auto ParseLegacyArgs = [](const std::string& args, const argsmap& vars) -> std::vector<std::string>
+        {
+            std::string replaced = GetReplacedArgs(args, vars);
+            std::istringstream iss(replaced);
+            return {std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
+        };
+        // - end lambda helpers
+
+        if (j.contains("arguments"))
+        {
+            ParseArgs(j["arguments"], jvmargs, gameargs, vars, os);
+        }
+        else if (j.contains("minecraftArguments"))
+        {
+            gameargs = ParseLegacyArgs(j["minecraftArguments"], vars);
+            jvmargs = {"-Xmx2G", "-Xms1G", "-Djava.library.path=" + nativesdir.string(), "-cp", classpath};
+        }
+
+        std::ostringstream cmd;
+        for (const auto& arguments : jvmargs) cmd << Getquotes(arguments) << " ";
+        cmd << mainClass << " ";
+        for (const auto& arguments : gameargs) cmd << Getquotes(arguments) << " ";
+
+        return cmd.str();
     }
     catch (...)
     {
