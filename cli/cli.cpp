@@ -218,7 +218,7 @@ int main()
             }
             std::cout << "Java downloaded.\n";
             auto java = *javaopt;
-            std::cout << "Done!\n";
+            std::cout << "Done!\n\n";
             break;
         }
 
@@ -349,7 +349,7 @@ int main()
 
             // build launch command.
             std::cout << "Building launch command...\n";
-            auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid);
+            auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
             if (!launchcmdopt)
             {
                 std::cout << "Failed to build launch command.\n";
@@ -432,7 +432,7 @@ int main()
                 break;
             }
             std::cout << "Server jar downloaded.\n\n";
-            std::cout << "Done!\n";
+            std::cout << "Done!\n\n";
             break;
         }
 
