@@ -390,9 +390,9 @@ int main(int, char**)
     GLuint playbuttonnormal = 0;
     GLuint playbuttonhover  = 0;
     GLuint playbuttonactive = 0;
-    const char* playbuttonnormalpath = "gfx/playbuttonnormal.png";
-    const char* playbuttonhoverpath = "gfx/playbuttonhover.png";
-    const char* playbuttonpressedpath = "gfx/playbuttonpressed.png";
+    const char* playbuttonnormalpath = "gfx/play_button_normal.png";
+    const char* playbuttonhoverpath = "gfx/play_button_hover.png";
+    const char* playbuttonpressedpath = "gfx/play_button_pressed.png";
     int playbuttonwidth, playbuttonheight;
     playbuttonnormal = cclauncher::LoadTexture(playbuttonnormalpath, &playbuttonwidth, &playbuttonheight);
     playbuttonhover = cclauncher::LoadTexture(playbuttonhoverpath,  &playbuttonwidth, &playbuttonheight);
@@ -410,9 +410,9 @@ int main(int, char**)
     GLuint stopbuttonhover  = 0;
     GLuint stopbuttonactive = 0;
     int stopbuttonwidth, stopbuttonheight;
-    stopbuttonnormal = cclauncher::LoadTexture("gfx/stopbuttonnormal.png", &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonhover = cclauncher::LoadTexture("gfx/stopbuttonhover.png",  &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonactive = cclauncher::LoadTexture("gfx/stopbuttonpressed.png", &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonnormal = cclauncher::LoadTexture("gfx/stop_button_normal.png", &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonhover = cclauncher::LoadTexture("gfx/stop_button_hover.png",  &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonactive = cclauncher::LoadTexture("gfx/stop_button_pressed.png", &stopbuttonwidth, &stopbuttonheight);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
