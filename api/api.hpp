@@ -6,6 +6,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <winhttp.h>
 #else
 #include <signal.h>
 #include <unistd.h>
@@ -82,4 +83,3 @@ namespace ccapi
     bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
     bool StopProcess(Processhandle* process);
 }
-
