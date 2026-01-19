@@ -26,6 +26,8 @@ using json = nlohmann::json;
 
 namespace ccapi
 {
+    using argsmap = std::unordered_map<std::string, std::string>;
+
     enum class GETmode
     {
         MemoryOnly,
@@ -71,7 +73,7 @@ namespace ccapi
     std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives, const std::string& versionid);
     std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, const std::string& versionid, OS os);
     std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath, OS os);
-    std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid);
+    std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os);
     std::optional<std::string> GetServerJarDownloadUrl(const std::string& versionjson);
     std::optional<std::string> DownloadServerJar(const std::string& serverurl, const std::string& versionid);
 
@@ -82,4 +84,3 @@ namespace ccapi
     bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
     bool StopProcess(Processhandle* process);
 }
-
