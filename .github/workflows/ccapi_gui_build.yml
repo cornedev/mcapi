@@ -18,6 +18,7 @@ on:
 
 jobs:
   build-linux:
+    name: build ccapi_gui (linux)
     runs-on: ubuntu-latest
 
     steps:
@@ -44,6 +45,7 @@ jobs:
         run: cmake --build gui/build
 
   build-macos:
+    name: build ccapi_gui (macos)
     runs-on: macos-latest
 
     steps:
@@ -64,6 +66,7 @@ jobs:
         run: cmake --build gui/build
 
   build-windows-mingw:
+    name: build ccapi_gui (windows)
     runs-on: windows-latest
 
     steps:
