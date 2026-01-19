@@ -24,7 +24,7 @@ namespace fs = std::filesystem;
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-namespace ccapi
+namespace mcapi
 {
     using argsmap = std::unordered_map<std::string, std::string>;
 
