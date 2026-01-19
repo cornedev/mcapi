@@ -1,9 +1,9 @@
 #include "api.hpp"
 
-namespace ccapi
+namespace mcapi
 {
 
-static fs::path datapath = ".ccapi";
+static fs::path datapath = ".mcapi";
 
 // - helpers
 static std::string GetOSNativesUrlName(OS os)
@@ -744,7 +744,7 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             {"version_type", j.value("type", "release")},
             {"classpath", classpath},
             {"natives_directory", nativesdir.string()},
-            {"launcher_name", "ccapi"},
+            {"launcher_name", "mcapi"},
             {"launcher_version", "1.0"}
         };
         std::vector<std::string> jvmargs;

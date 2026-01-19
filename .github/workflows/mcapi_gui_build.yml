@@ -1,4 +1,4 @@
-name: build ccapi_gui
+name: build mcapi_gui
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-linux:
-    name: build ccapi_gui (linux)
+    name: build mcapi_gui (linux)
     runs-on: ubuntu-latest
 
     steps:
@@ -45,7 +45,7 @@ jobs:
         run: cmake --build gui/build
 
   build-macos:
-    name: build ccapi_gui (macos)
+    name: build mcapi_gui (macos)
     runs-on: macos-latest
 
     steps:
@@ -66,7 +66,7 @@ jobs:
         run: cmake --build gui/build
 
   build-windows-mingw:
-    name: build ccapi_gui (windows)
+    name: build mcapi_gui (windows)
     runs-on: windows-latest
 
     steps:

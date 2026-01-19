@@ -1,4 +1,4 @@
-name: build ccapi_cli
+name: build mcapi_cli
 
 on:
   push:
@@ -18,7 +18,7 @@ on:
 
 jobs:
   build-linux:
-    name: build ccapi_cli (linux)
+    name: build mcapi_cli (linux)
     runs-on: ubuntu-latest
 
     steps:
@@ -41,7 +41,7 @@ jobs:
         run: cmake --build cli/build
 
   build-macos:
-    name: build ccapi_cli (macos)
+    name: build mcapi_cli (macos)
     runs-on: macos-latest
 
     steps:
@@ -60,7 +60,7 @@ jobs:
         run: cmake --build cli/build
 
   build-windows-mingw:
-    name: build ccapi_cli (windows)
+    name: build mcapi_cli (windows)
     runs-on: windows-latest
 
     steps:

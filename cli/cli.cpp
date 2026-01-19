@@ -3,14 +3,14 @@
 #include <fstream>
 #include "../api/api.hpp"
 
-static ccapi::Processhandle process{};
+static mcapi::Processhandle process{};
 int main()
 {
     curl_version_info_data* info = curl_version_info(CURLVERSION_NOW);
     std::cout << "curl SSL backend: " << info->ssl_version << "\n";
     while (true)
     {
-        std::cout << "ccapi clilauncher 1.0\n";
+        std::cout << "mcapi clilauncher 1.0\n";
         std::cout << "1. Download all required assets for minecraft.\n";
         std::cout << "2. Download java for minecraft.\n";
         std::cout << "3. Launch minecraft.\n";
@@ -40,7 +40,7 @@ int main()
 
             // download manifest.
             std::cout << "Downloading version manifest...\n";
-            auto manifest = ccapi::DownloadVersionManifest();
+            auto manifest = mcapi::DownloadVersionManifest();
             if (manifest.empty())
             {
                 std::cout << "Failed to download manifest.\n";
@@ -49,7 +49,7 @@ int main()
             std::cout << "Version manifest downloaded.\n";
 
             // download version json.
-            auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
+            auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionid);
             if (!versionjsonurl)
             {
                 std::cout << "Version not found in manifest.\n";
@@ -58,7 +58,7 @@ int main()
             auto versionurl = *versionjsonurl;
 
             std::cout << "Downloading version json...\n";
-            auto versionjsonopt = ccapi::DownloadVersionJson(versionurl, versionid);
+            auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
             if (!versionjsonopt)
             {
                 std::cout << "Failed to download version json.\n";
@@ -68,7 +68,7 @@ int main()
             auto versionjson = *versionjsonopt;
 
             // download client jar.
-            auto jarurlopt = ccapi::GetClientJarDownloadUrl(versionjson);
+            auto jarurlopt = mcapi::GetClientJarDownloadUrl(versionjson);
             if (!jarurlopt)
             {
                 std::cout << "Failed to get client jar url.\n";
@@ -77,7 +77,7 @@ int main()
             auto jarurl = *jarurlopt;
 
             std::cout << "Downloading client jar...\n";
-            auto clientjar = ccapi::DownloadClientJar(jarurl, versionid);
+            auto clientjar = mcapi::DownloadClientJar(jarurl, versionid);
             if (!clientjar)
             {
                 std::cout << "Failed to download client jar.\n";
@@ -86,7 +86,7 @@ int main()
             std::cout << "Client jar downloaded.\n";
 
             // download asset index.
-            auto indexurlopt = ccapi::GetAssetIndexJsonDownloadUrl(versionjson);
+            auto indexurlopt = mcapi::GetAssetIndexJsonDownloadUrl(versionjson);
             if (!indexurlopt)
             {
                 std::cout << "Failed to get asset index URL.\n";
@@ -95,7 +95,7 @@ int main()
             auto indexurl = *indexurlopt;
 
             std::cout << "Downloading Asset index\n";
-            auto assetjsonopt = ccapi::DownloadAssetIndexJson(indexurl, versionid);
+            auto assetjsonopt = mcapi::DownloadAssetIndexJson(indexurl, versionid);
             if (!assetjsonopt)
             {
                 std::cout << "Failed to download asset index.\n";
@@ -105,7 +105,7 @@ int main()
             std::cout << "Asset index downloaded.\n";
 
             // download assets.
-            auto assetsurlopt = ccapi::GetAssetsDownloadUrl(assetjson);
+            auto assetsurlopt = mcapi::GetAssetsDownloadUrl(assetjson);
             if (!assetsurlopt)
             {
                 std::cout << "Failed to get assets download urls.\n";
@@ -113,7 +113,7 @@ int main()
             }
 
             std::cout << "Downloading assets... (this may take a while)\n";
-            auto assets = ccapi::DownloadAssets(*assetsurlopt, versionid);
+            auto assets = mcapi::DownloadAssets(*assetsurlopt, versionid);
             if (!assets)
             {
                 std::cout << "Failed to download assets.\n";
@@ -132,7 +132,7 @@ int main()
 
             // download manifest.
             std::cout << "Downloading version manifest...\n";
-            auto manifest = ccapi::DownloadVersionManifest();
+            auto manifest = mcapi::DownloadVersionManifest();
             if (manifest.empty())
             {
                 std::cout << "Failed to download manifest.\n";
@@ -141,7 +141,7 @@ int main()
             std::cout << "Version manifest downloaded.\n";
 
             // download version json.
-            auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
+            auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionid);
             if (!versionjsonurl)
             {
                 std::cout << "Version not found in manifest.\n";
@@ -150,7 +150,7 @@ int main()
             auto versionurl = *versionjsonurl;
 
             std::cout << "Downloading version json...\n";
-            auto versionjsonopt = ccapi::DownloadVersionJson(versionurl, versionid);
+            auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
             if (!versionjsonopt)
             {
                 std::cout << "Failed to download version json.\n";
@@ -167,25 +167,25 @@ int main()
             std::cin >> arch;
 
             // conversion.
-            ccapi::OS osenum;
+            mcapi::OS osenum;
             if (os == "windows")
-                osenum = ccapi::OS::Windows;
+                osenum = mcapi::OS::Windows;
             else if (os == "linux")
-                osenum = ccapi::OS::Linux;
+                osenum = mcapi::OS::Linux;
             else if (os == "macos")
-                osenum = ccapi::OS::Macos;
+                osenum = mcapi::OS::Macos;
             else
             {
                 std::cerr << "Invalid OS.\n";
                 return 1;
             }
-            ccapi::Arch archenum;
+            mcapi::Arch archenum;
             if (arch == "x64")
-                archenum = ccapi::Arch::x64;
+                archenum = mcapi::Arch::x64;
             else if (arch == "x32")
-                archenum = ccapi::Arch::x32;
+                archenum = mcapi::Arch::x32;
             else if (arch == "arm64")
-                archenum = ccapi::Arch::arm64;
+                archenum = mcapi::Arch::arm64;
             else
             {
                 std::cerr << "Invalid architecture.\n";
@@ -193,7 +193,7 @@ int main()
             }
 
             // download java.
-            auto javaversionopt = ccapi::GetJavaVersion(versionjson);
+            auto javaversionopt = mcapi::GetJavaVersion(versionjson);
             if (!javaversionopt)
             {
                 std:: cout << "Failed to get java version.\n";
@@ -201,7 +201,7 @@ int main()
             }
             int javaversion = *javaversionopt;
 
-            auto javaurlopt = ccapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
+            auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
             if (!javaurlopt)
             {
                 std:: cout << "Failed to get java download url.\n";
@@ -210,7 +210,7 @@ int main()
             auto javaurl = *javaurlopt;
 
             std::cout << "Downloading java...\n";
-            auto javaopt = ccapi::DownloadJava(javaurl, versionid);
+            auto javaopt = mcapi::DownloadJava(javaurl, versionid);
             if (!javaopt)
             {
                 std:: cout << "Failed to download java.\n";
@@ -233,7 +233,7 @@ int main()
 
             // download manifest.
             std::cout << "Downloading version manifest...\n";
-            auto manifest = ccapi::DownloadVersionManifest();
+            auto manifest = mcapi::DownloadVersionManifest();
             if (manifest.empty())
             {
                 std::cout << "Failed to download manifest.\n";
@@ -242,7 +242,7 @@ int main()
             std::cout << "Version manifest downloaded\n";
 
             // download version json.
-            auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
+            auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionid);
             if (!versionjsonurl)
             {
                 std::cout << "Version not found in manifest.\n";
@@ -251,7 +251,7 @@ int main()
             auto versionurl = *versionjsonurl;
 
             std::cout << "Downloading version json...\n";
-            auto versionjsonopt = ccapi::DownloadVersionJson(versionurl, versionid);
+            auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
             if (!versionjsonopt)
             {
                 std::cout << "Failed to download version json.\n";
@@ -268,25 +268,25 @@ int main()
             std::cin >> arch;
 
             // conversion.
-            ccapi::OS osenum;
+            mcapi::OS osenum;
             if (os == "windows")
-                osenum = ccapi::OS::Windows;
+                osenum = mcapi::OS::Windows;
             else if (os == "linux")
-                osenum = ccapi::OS::Linux;
+                osenum = mcapi::OS::Linux;
             else if (os == "macos")
-                osenum = ccapi::OS::Macos;
+                osenum = mcapi::OS::Macos;
             else
             {
                 std::cerr << "Invalid OS.\n";
                 return 1;
             }
-            ccapi::Arch archenum;
+            mcapi::Arch archenum;
             if (arch == "x64")
-                archenum = ccapi::Arch::x64;
+                archenum = mcapi::Arch::x64;
             else if (arch == "x32")
-                archenum = ccapi::Arch::x32;
+                archenum = mcapi::Arch::x32;
             else if (arch == "arm64")
-                archenum = ccapi::Arch::arm64;
+                archenum = mcapi::Arch::arm64;
             else
             {
                 std::cerr << "Invalid architecture.\n";
@@ -294,7 +294,7 @@ int main()
             }
 
             // download libraries.
-            auto librariesurlopt = ccapi::GetLibrariesDownloadUrl(versionjson, osenum);
+            auto librariesurlopt = mcapi::GetLibrariesDownloadUrl(versionjson, osenum);
             if (!librariesurlopt)
             {
                 std::cout << "Failed to get libraries.\n";
@@ -302,7 +302,7 @@ int main()
             }
 
             std::cout << "Downloading libraries...\n";
-            auto librariesdownloaded = ccapi::DownloadLibraries(*librariesurlopt, versionid);
+            auto librariesdownloaded = mcapi::DownloadLibraries(*librariesurlopt, versionid);
             if (!librariesdownloaded)
             {
                 std::cout << "Failed to download libraries.\n";
@@ -312,7 +312,7 @@ int main()
 
             // extract natives.
             std::cout << "Extracting natives...\n";
-            auto nativesurlopt = ccapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
+            auto nativesurlopt = mcapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
             if (!nativesurlopt)
             {
                 std::cout << "Failed to get natives urls.\n";
@@ -320,14 +320,14 @@ int main()
             }
 
             std::cout << "Downloading natives...\n";
-            auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
+            auto nativesjarsopt = mcapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
             if (!nativesjarsopt)
             {
                 std::cout << "Failed to download native jars.\n";
                 break;
             }
 
-            auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
+            auto nativesextracted = mcapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
             if (!nativesextracted)
             {
                 std::cout << "Failed to extract natives.\n";
@@ -337,8 +337,8 @@ int main()
 
             // build classpath.
             std::cout << "Building classpath...\n";
-            fs::path datapath = ".ccapi";
-            auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
+            fs::path datapath = ".mcapi";
+            auto classpathopt = mcapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
             if (!classpathopt)
             {
                 std::cout << "Failed to build classpath.\n";
@@ -349,7 +349,7 @@ int main()
 
             // build launch command.
             std::cout << "Building launch command...\n";
-            auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
+            auto launchcmdopt = mcapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
             if (!launchcmdopt)
             {
                 std::cout << "Failed to build launch command.\n";
@@ -362,16 +362,16 @@ int main()
             std::string javapath;
             switch (osenum)
             {
-                case ccapi::OS::Windows:
+                case mcapi::OS::Windows:
                     javapath = "runtime/" + versionid + "/java/bin/java.exe";
                     break;
 
-                case ccapi::OS::Linux:
-                case ccapi::OS::Macos:
+                case mcapi::OS::Linux:
+                case mcapi::OS::Macos:
                     javapath = "runtime/" + versionid + "/java/bin/java";
                     break;
             }
-            bool launched = ccapi::StartProcess(javapath, launchcmd, osenum, &process);
+            bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process);
             
             if (!launched)
                 std::cout << "Failed to launch Minecraft.\n";
@@ -388,7 +388,7 @@ int main()
 
             // download manifest.
             std::cout << "Downloading version manifest...\n";
-            auto manifest = ccapi::DownloadVersionManifest();
+            auto manifest = mcapi::DownloadVersionManifest();
             if (manifest.empty())
             {
                 std::cout << "Failed to download manifest.\n";
@@ -397,7 +397,7 @@ int main()
             std::cout << "Version manifest downloaded.\n";
 
             // download version json.
-            auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifest, versionid);
+            auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionid);
             if (!versionjsonurl)
             {
                 std::cout << "Version not found in manifest.\n";
@@ -406,7 +406,7 @@ int main()
             auto versionurl = *versionjsonurl;
 
             std::cout << "Downloading version json...\n";
-            auto versionjsonopt = ccapi::DownloadVersionJson(versionurl, versionid);
+            auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
             if (!versionjsonopt)
             {
                 std::cout << "Failed to download version json.\n";
@@ -416,7 +416,7 @@ int main()
             auto versionjson = *versionjsonopt;
 
             // download server jar.
-            auto serverjarurlopt = ccapi::GetServerJarDownloadUrl(versionjson);
+            auto serverjarurlopt = mcapi::GetServerJarDownloadUrl(versionjson);
             if (!serverjarurlopt)
             {
                 std::cout << "Could not find server jar in version json.\n";
@@ -425,7 +425,7 @@ int main()
             auto serverjarurl = *serverjarurlopt;
 
             std::cout << "Downloading server jar...\n";
-            auto versionjaropt = ccapi::DownloadServerJar(serverjarurl, versionid);
+            auto versionjaropt = mcapi::DownloadServerJar(serverjarurl, versionid);
             if (!versionjaropt)
             {
                 std::cout << "Could not download server jar.\n";

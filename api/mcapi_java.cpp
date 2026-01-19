@@ -1,6 +1,6 @@
 #include "api.hpp"
 
-namespace ccapi
+namespace mcapi
 {
 
 std::optional<int> GetJavaVersion(const std::string& versionjson)

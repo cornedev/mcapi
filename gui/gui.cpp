@@ -22,9 +22,9 @@ static std::mutex consolemutex;
 static std::atomic<bool> launching = false;
 static std::thread launchthread;
 static std::atomic<bool> running = false;
-static ccapi::Processhandle process{};
+static mcapi::Processhandle process{};
 
-namespace cclauncher
+namespace mcapi_gui
 {
 
     GLuint LoadTexture(const char* filename, int* outwidth, int* outheight)
@@ -57,7 +57,7 @@ namespace cclauncher
     void LaunchMinecraft(std::string username, std::string versionid, std::string manifestjson, std::string arch, std::string os)
     {
         // download version json.
-        auto versionjsonurl = ccapi::GetVersionJsonDownloadUrl(manifestjson, versionid);
+        auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifestjson, versionid);
         if (!versionjsonurl)
         {
             Log("Version not found in manifest.\n");
@@ -66,7 +66,7 @@ namespace cclauncher
         auto versionurl = *versionjsonurl;
 
         Log("Downloading version json...\n");
-        auto versionjsonopt = ccapi::DownloadVersionJson(versionurl, versionid);
+        auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
         if (!versionjsonopt)
         {
             Log("Failed to download version json.\n");
@@ -76,7 +76,7 @@ namespace cclauncher
         auto versionjson = *versionjsonopt;
 
         // download client jar.
-        auto jarurlopt = ccapi::GetClientJarDownloadUrl(versionjson);
+        auto jarurlopt = mcapi::GetClientJarDownloadUrl(versionjson);
         if (!jarurlopt)
         {
             Log("Failed to get client jar url.\n");
@@ -85,7 +85,7 @@ namespace cclauncher
         auto jarurl = *jarurlopt;
 
         Log("Downloading client jar...\n");
-        auto clientjar = ccapi::DownloadClientJar(jarurl, versionid);
+        auto clientjar = mcapi::DownloadClientJar(jarurl, versionid);
         if (!clientjar)
         {
             Log("Failed to download client jar.\n");
@@ -94,7 +94,7 @@ namespace cclauncher
         Log("Client jar downloaded.\n");
 
         // download asset index.
-        auto indexurlopt = ccapi::GetAssetIndexJsonDownloadUrl(versionjson);
+        auto indexurlopt = mcapi::GetAssetIndexJsonDownloadUrl(versionjson);
         if (!indexurlopt)
         {
             Log("Failed to get asset index URL.\n");
@@ -103,7 +103,7 @@ namespace cclauncher
         auto indexurl = *indexurlopt;
 
         Log("Downloading Asset index...\n");
-        auto assetjsonopt = ccapi::DownloadAssetIndexJson(indexurl, versionid);
+        auto assetjsonopt = mcapi::DownloadAssetIndexJson(indexurl, versionid);
         if (!assetjsonopt)
         {
             Log("Failed to download asset index.\n");
@@ -113,7 +113,7 @@ namespace cclauncher
         Log("Asset index downloaded.\n");
 
         // download assets.
-        auto assetsurlopt = ccapi::GetAssetsDownloadUrl(assetjson);
+        auto assetsurlopt = mcapi::GetAssetsDownloadUrl(assetjson);
         if (!assetsurlopt)
         {
             Log("Failed to get assets download urls.\n");
@@ -121,7 +121,7 @@ namespace cclauncher
         }
 
         Log("Downloading assets... (this may take a while)\n");
-        auto assets = ccapi::DownloadAssets(*assetsurlopt, versionid);
+        auto assets = mcapi::DownloadAssets(*assetsurlopt, versionid);
         if (!assets)
         {
             Log("Failed to download assets.\n");
@@ -130,25 +130,25 @@ namespace cclauncher
         Log("Assets downloaded.\n");
 
         // conversion.
-        ccapi::OS osenum;
+        mcapi::OS osenum;
         if (os == "windows")
-            osenum = ccapi::OS::Windows;
+            osenum = mcapi::OS::Windows;
         else if (os == "linux")
-            osenum = ccapi::OS::Linux;
+            osenum = mcapi::OS::Linux;
         else if (os == "macos")
-            osenum = ccapi::OS::Macos;
+            osenum = mcapi::OS::Macos;
         else
         {
             Log("Invalid OS.\n");
             return;
         }
-        ccapi::Arch archenum;
+        mcapi::Arch archenum;
         if (arch == "x64")
-            archenum = ccapi::Arch::x64;
+            archenum = mcapi::Arch::x64;
         else if (arch == "x32")
-            archenum = ccapi::Arch::x32;
+            archenum = mcapi::Arch::x32;
         else if (arch == "arm64")
-            archenum = ccapi::Arch::arm64;
+            archenum = mcapi::Arch::arm64;
         else
         {
             Log("Invalid architecture.\n");
@@ -156,7 +156,7 @@ namespace cclauncher
         }
 
         // download java.
-        auto javaversionopt = ccapi::GetJavaVersion(versionjson);
+        auto javaversionopt = mcapi::GetJavaVersion(versionjson);
         if (!javaversionopt)
         {
             Log("Failed to get java version.\n");
@@ -164,7 +164,7 @@ namespace cclauncher
         }
         int javaversion = *javaversionopt;
 
-        auto javaurlopt = ccapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
+        auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
         if (!javaurlopt)
         {
             Log("Failed to get java download url.\n");
@@ -173,7 +173,7 @@ namespace cclauncher
         auto javaurl = *javaurlopt;
 
         Log("Downloading java...\n");
-        auto javaopt = ccapi::DownloadJava(javaurl, versionid);
+        auto javaopt = mcapi::DownloadJava(javaurl, versionid);
         if (!javaopt)
         {
             Log("Failed to download java.\n");
@@ -183,7 +183,7 @@ namespace cclauncher
         auto java = *javaopt;
 
         // download libraries.
-        auto librariesurlopt = ccapi::GetLibrariesDownloadUrl(versionjson, osenum);
+        auto librariesurlopt = mcapi::GetLibrariesDownloadUrl(versionjson, osenum);
         if (!librariesurlopt)
         {
             Log("Failed to get libraries.\n");
@@ -191,7 +191,7 @@ namespace cclauncher
         }
 
         Log("Downloading libraries...\n");
-        auto librariesdownloaded = ccapi::DownloadLibraries(*librariesurlopt, versionid);
+        auto librariesdownloaded = mcapi::DownloadLibraries(*librariesurlopt, versionid);
         if (!librariesdownloaded)
         {
             Log("Failed to download libraries.\n");
@@ -201,7 +201,7 @@ namespace cclauncher
 
         // extract natives.
         Log("Extracting natives...\n");
-        auto nativesurlopt = ccapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
+        auto nativesurlopt = mcapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
         if (!nativesurlopt)
         {
             Log("Failed to get natives urls.\n");
@@ -209,14 +209,14 @@ namespace cclauncher
         }
 
         Log("Downloading natives...\n");
-        auto nativesjarsopt = ccapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
+        auto nativesjarsopt = mcapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
         if (!nativesjarsopt)
         {
             Log("Failed to download native jars.\n");
             return;
         }
 
-        auto nativesextracted = ccapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
+        auto nativesextracted = mcapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
         if (!nativesextracted)
         {
             Log("Failed to extract natives.\n");
@@ -226,8 +226,8 @@ namespace cclauncher
 
         // build classpath.
         Log("Building classpath...\n");
-        fs::path datapath = ".ccapi";
-        auto classpathopt = ccapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
+        fs::path datapath = ".mcapi";
+        auto classpathopt = mcapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
         if (!classpathopt)
         {
             Log("Failed to build classpath.\n");
@@ -238,7 +238,7 @@ namespace cclauncher
 
         // build launch command.
         Log("Building launch command...\n");
-        auto launchcmdopt = ccapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
+        auto launchcmdopt = mcapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
         if (!launchcmdopt)
         {
             Log("Failed to build launch command.\n");
@@ -251,16 +251,16 @@ namespace cclauncher
         std::string javapath;
         switch (osenum)
         {
-            case ccapi::OS::Windows:
+            case mcapi::OS::Windows:
                 javapath = "runtime/" + versionid + "/java/bin/java.exe";
                 break;
 
-            case ccapi::OS::Linux:
-            case ccapi::OS::Macos:
+            case mcapi::OS::Linux:
+            case mcapi::OS::Macos:
                 javapath = "runtime/" + versionid + "/java/bin/java";
                 break;
         }
-        bool launched = ccapi::StartProcess(javapath, launchcmd, osenum, &process);
+        bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process);
         if (!launched)
         {
             Log("Failed to launch Minecraft.\n");
@@ -357,12 +357,12 @@ int main(int, char**)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    GLFWwindow* mainwindow = glfwCreateWindow(900, 900, "ccapi_gui_launcher", nullptr, nullptr);
+    GLFWwindow* mainwindow = glfwCreateWindow(900, 900, "mcapi_gui_launcher", nullptr, nullptr);
     if (mainwindow == nullptr) return 1;
     glfwMakeContextCurrent(mainwindow);
 
     int icon_width, icon_height, icon_channels;
-    unsigned char* icon_pixels = stbi_load("gfx/ccapi_gui.png", &icon_width, &icon_height, &icon_channels, 4);
+    unsigned char* icon_pixels = stbi_load("gfx/mcapi_gui.png", &icon_width, &icon_height, &icon_channels, 4);
     if (icon_pixels)
     {
         GLFWimage images[1];
@@ -377,7 +377,7 @@ int main(int, char**)
     GLuint mainbg = 0;
     int mainbgwidth, mainbgheight;
     const char* mainbgpath = "gfx/main.png";
-    mainbg = cclauncher::LoadTexture(mainbgpath, &mainbgwidth, &mainbgheight);
+    mainbg = mcapi_gui::LoadTexture(mainbgpath, &mainbgwidth, &mainbgheight);
     if (mainbg == 0)
     {
         std::cout << "Failed to load background: " << mainbgpath << "\n";
@@ -394,9 +394,9 @@ int main(int, char**)
     const char* playbuttonhoverpath = "gfx/play_button_hover.png";
     const char* playbuttonpressedpath = "gfx/play_button_pressed.png";
     int playbuttonwidth, playbuttonheight;
-    playbuttonnormal = cclauncher::LoadTexture(playbuttonnormalpath, &playbuttonwidth, &playbuttonheight);
-    playbuttonhover = cclauncher::LoadTexture(playbuttonhoverpath,  &playbuttonwidth, &playbuttonheight);
-    playbuttonactive = cclauncher::LoadTexture(playbuttonpressedpath, &playbuttonwidth, &playbuttonheight);
+    playbuttonnormal = mcapi_gui::LoadTexture(playbuttonnormalpath, &playbuttonwidth, &playbuttonheight);
+    playbuttonhover = mcapi_gui::LoadTexture(playbuttonhoverpath,  &playbuttonwidth, &playbuttonheight);
+    playbuttonactive = mcapi_gui::LoadTexture(playbuttonpressedpath, &playbuttonwidth, &playbuttonheight);
     if (playbuttonnormal && playbuttonhover && playbuttonactive == 0)
     {
         std::cout << "Failed to load texture: " << playbuttonnormalpath << " " << playbuttonhoverpath << " " << playbuttonpressedpath << "\n";
@@ -410,9 +410,9 @@ int main(int, char**)
     GLuint stopbuttonhover  = 0;
     GLuint stopbuttonactive = 0;
     int stopbuttonwidth, stopbuttonheight;
-    stopbuttonnormal = cclauncher::LoadTexture("gfx/stop_button_normal.png", &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonhover = cclauncher::LoadTexture("gfx/stop_button_hover.png",  &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonactive = cclauncher::LoadTexture("gfx/stop_button_pressed.png", &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonnormal = mcapi_gui::LoadTexture("gfx/stop_button_normal.png", &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonhover = mcapi_gui::LoadTexture("gfx/stop_button_hover.png",  &stopbuttonwidth, &stopbuttonheight);
+    stopbuttonactive = mcapi_gui::LoadTexture("gfx/stop_button_pressed.png", &stopbuttonwidth, &stopbuttonheight);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -433,16 +433,16 @@ int main(int, char**)
     char buf[64] = "";
     std::string manifestjson;
 
-    cclauncher::Log("Downloading version manifest...\n");
-    manifestjson = ccapi::DownloadVersionManifest();
-    cclauncher::Log("Version manifest downloaded.\n");
+    mcapi_gui::Log("Downloading version manifest...\n");
+    manifestjson = mcapi::DownloadVersionManifest();
+    mcapi_gui::Log("Version manifest downloaded.\n");
     if (!manifestjson.empty())
     {
-        auto ids = ccapi::GetVersionsFromManifest(manifestjson);
+        auto ids = mcapi::GetVersionsFromManifest(manifestjson);
         if (ids && !ids->empty())
         {
             versionids = std::move(*ids);
-            cclauncher::Log(std::string("Loaded ") + std::to_string(versionids.size()) + " versions.\n");
+            mcapi_gui::Log(std::string("Loaded ") + std::to_string(versionids.size()) + " versions.\n");
         }
     }
 
@@ -480,7 +480,7 @@ int main(int, char**)
                               | ImGuiWindowFlags_NoBringToFrontOnFocus;
         {
             ImGui::PushFont(mainfont);
-            ImGui::Begin("cclauncher", nullptr, main_window_flags);
+            ImGui::Begin("mcapi_gui", nullptr, main_window_flags);
 
             // - username inputtext.
             ImGui::SetCursorPos(ImVec2(635, 520));
@@ -499,12 +499,12 @@ int main(int, char**)
 
             // - architecture select combobox.
             ImGui::SetCursorPos(ImVec2(15, 620));
-            cclauncher::ComboBox("##archcombo", &currentarch, archoptions, IM_ARRAYSIZE(archoptions));
+            mcapi_gui::ComboBox("##archcombo", &currentarch, archoptions, IM_ARRAYSIZE(archoptions));
             // - end architecture select combobox.
 
             // - os select combobox.
             ImGui::SetCursorPos(ImVec2(15, 715));
-            cclauncher::ComboBox("##oscombo", &currentos, osoptions, IM_ARRAYSIZE(osoptions));
+            mcapi_gui::ComboBox("##oscombo", &currentos, osoptions, IM_ARRAYSIZE(osoptions));
             // - end os select combobox.
 
             // - version select combobox.
@@ -514,11 +514,11 @@ int main(int, char**)
                 versionitems.push_back(v.c_str());
             if (!versionitems.empty())
             {
-                cclauncher::ComboBox("##versioncombo", &currentversion, versionitems.data(), static_cast<int>(versionitems.size()), false);
+                mcapi_gui::ComboBox("##versioncombo", &currentversion, versionitems.data(), static_cast<int>(versionitems.size()), false);
             }
             else
             {
-                cclauncher::Log("Versions not yet loaded.");
+                mcapi_gui::Log("Versions not yet loaded.");
             }
             // - end version select combobox.
 
@@ -541,13 +541,13 @@ int main(int, char**)
                 std::string os = osoptions[currentos];
                 if (username.empty())
                 {
-                    cclauncher::Log("Please enter a username.\n");
+                    mcapi_gui::Log("Please enter a username.\n");
                 }
                 else 
                 {
                     if (launching == true)
                     {
-                        cclauncher::Log("Minecraft already launching.");
+                        mcapi_gui::Log("Minecraft already launching.");
                     }
                     else if (launching == false && !versionids.empty() && currentversion < static_cast<int>(versionids.size()))
                     {
@@ -558,15 +558,15 @@ int main(int, char**)
                         {
                             try
                             {
-                                cclauncher::LaunchMinecraft(username, versionid, manifestjson, arch, os);
+                                mcapi_gui::LaunchMinecraft(username, versionid, manifestjson, arch, os);
                             }
                             catch (const std::exception& e)
                             {
-                                cclauncher::Log(std::string("Launcher crashed: ") + e.what());
+                                mcapi_gui::Log(std::string("Launcher crashed: ") + e.what());
                             }
                             catch (...)
                             {
-                                cclauncher::Log("Unknown error.");
+                                mcapi_gui::Log("Unknown error.");
                             }
                             launching = false;
                         });
@@ -591,14 +591,14 @@ int main(int, char**)
             }
             if (ImGui::IsItemClicked())
             {
-                if (!ccapi::StopProcess(&process))
+                if (!mcapi::StopProcess(&process))
                 {
-                    cclauncher::Log("Failed to stop Minecraft.\n");
+                    mcapi_gui::Log("Failed to stop Minecraft.\n");
                 }
                 else
                 {
                     running = false;
-                    cclauncher::Log("Minecraft stopped.\n");
+                    mcapi_gui::Log("Minecraft stopped.\n");
                 }
             }
             ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)stoptex, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
