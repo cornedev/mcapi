@@ -49,9 +49,7 @@ jobs:
 
       - name: create package
         run: |
-          mkdir -p dist
-          cp cli/build/mcapi_cli dist/
-          tar -czf mcapi_cli-linux.tar.gz -C dist .
+          tar -czf mcapi_cli-linux.tar.gz -C cli/build .
 
       - name: push latest linux build to builds branch
         if: github.ref == 'refs/heads/main'
@@ -93,9 +91,7 @@ jobs:
 
       - name: create package
         run: |
-          mkdir -p dist
-          cp cli/build/mcapi_cli dist/
-          tar -czf mcapi_cli-macos.tar.gz -C dist .
+          tar -czf mcapi_cli-macos.tar.gz -C cli/build .
 
       - name: push latest macos build to builds branch
         if: github.ref == 'refs/heads/main'
@@ -143,9 +139,7 @@ jobs:
       - name: create package
         shell: pwsh
         run: |
-          mkdir dist
-          Copy-Item cli/build/mcapi_cli.exe dist/
-          Compress-Archive -Path dist/* -DestinationPath mcapi_cli-windows.zip
+          Compress-Archive -Path cli/build/* -DestinationPath mcapi_cli-windows.zip
 
       - name: push latest windows build to builds branch
         if: github.ref == 'refs/heads/main'
