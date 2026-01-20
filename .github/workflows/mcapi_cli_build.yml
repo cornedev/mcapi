@@ -141,11 +141,11 @@ jobs:
           cmake --build cli/build
 
       - name: create package
-        shell: msys2 {0}
+        shell: pwsh
         run: |
-          mkdir -p dist
-          cp cli/build/mcapi_cli.exe dist/
-          7z a mcapi_cli-windows.zip dist/*
+          mkdir dist
+          Copy-Item cli/build/mcapi_cli.exe dist/
+          Compress-Archive -Path dist/* -DestinationPath mcapi_cli-windows.zip
 
       - name: push latest windows build to builds branch
         if: github.ref == 'refs/heads/main'
