@@ -642,7 +642,7 @@ std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vecto
                 continue;
             }
 
-            fs::path outpath = datapath / "natives" / versionid / fs::path(entryName).filename();
+            fs::path outpath = datapath / versionid / "natives" / fs::path(entryName).filename();
             if (fs::exists(outpath) && fs::file_size(outpath) > 0)
             {
                 extracted.push_back(outpath.string());
