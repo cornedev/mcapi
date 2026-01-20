@@ -727,7 +727,7 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
 
         std::filesystem::path gamedir = datapath / "versions" / versionid;
         std::filesystem::path assetsdir = datapath / versionid / "assets";
-        std::filesystem::path nativesdir = datapath / "natives" / versionid;
+        std::filesystem::path nativesdir = datapath / versionid / "natives";
         std::filesystem::create_directories(gamedir);
         std::filesystem::create_directories(nativesdir);
 
