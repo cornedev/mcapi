@@ -1,9 +1,0 @@
-[submodule "cli/runtime/include/curl-schannel"]
-	path = cli/runtime/include/curl-schannel
-	url = https://github.com/cornedev/curl-schannel.git
-[submodule "gui/runtime/include/curl-schannel"]
-	path = gui/runtime/include/curl-schannel
-	url = https://github.com/cornedev/curl-schannel.git
-[submodule "gui/imgui"]
-	path = gui/imgui
-	url = https://github.com/ocornut/imgui.git
