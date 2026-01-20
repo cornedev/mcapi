@@ -1,5 +1,8 @@
 name: build mcapi_gui
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: main
@@ -15,6 +18,10 @@ on:
       - '**/**/CMakeLists.txt'
       - '**/**/*.cpp'
       - '**/**/*.hpp'
+
+concurrency:
+  group: mcapi-gui-builds
+  cancel-in-progress: true
 
 jobs:
   build-linux:
@@ -44,6 +51,29 @@ jobs:
       - name: build project
         run: cmake --build gui/build
 
+      - name: create package
+        run: |
+          tar -czf mcapi_gui-linux.tar.gz -C gui/build .
+
+      - name: push latest linux build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload linux build
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p builds-branch/builds/gui/linux
+          mv mcapi_gui-linux.tar.gz builds-branch/builds/gui/linux/mcapi_gui.tar.gz
+          cd builds-branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/gui/linux/mcapi_gui.tar.gz
+          git commit -m "Upload latest mcapi_gui linux build." || true
+          git push origin builds
+
   build-macos:
     name: build mcapi_gui (macos)
     runs-on: macos-latest
@@ -64,6 +94,29 @@ jobs:
 
       - name: build project
         run: cmake --build gui/build
+
+      - name: create package
+        run: |
+          tar -czf mcapi_gui-macos.tar.gz -C gui/build .
+
+      - name: push latest macos build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload macos build
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p builds-branch/builds/gui/macos
+          mv mcapi_gui-macos.tar.gz builds-branch/builds/gui/macos/mcapi_gui.tar.gz
+          cd builds-branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/gui/macos/mcapi_gui.tar.gz
+          git commit -m "Upload latest mcapi_gui macos build." || true
+          git push origin builds
 
   build-windows-mingw:
     name: build mcapi_gui (windows)
@@ -86,8 +139,35 @@ jobs:
             mingw-w64-x86_64-curl
             mingw-w64-x86_64-nlohmann-json
             mingw-w64-x86_64-glfw
+
       - name: build project
         shell: msys2 {0}
         run: |
           cmake -S gui -B gui/build -G "MinGW Makefiles"
           cmake --build gui/build
+
+      - name: create package
+        shell: pwsh
+        run: |
+          Compress-Archive -Path gui/build/* -DestinationPath mcapi_gui-windows.zip
+
+      - name: push latest windows build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload windows build
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          Set-Location -Path builds-branch
+          $target = "builds/gui/windows"
+          if (-Not (Test-Path $target)) { New-Item -ItemType Directory -Force -Path $target }
+          Move-Item ..\mcapi_gui-windows.zip "$target\mcapi_gui.zip" -Force
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/gui/windows/mcapi_gui.zip
+          git commit -m "Upload latest mcapi_gui windows build." || Write-Host "No changes"
+          git push origin builds
