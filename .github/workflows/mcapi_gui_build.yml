@@ -72,7 +72,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/linux/mcapi_gui.tar.gz
           git commit -m "Upload latest mcapi_gui linux build." || true
-          git push origin builds
+          git push origin builds --force
 
   build-macos:
     name: build mcapi_gui (macos)
@@ -116,7 +116,7 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/macos/mcapi_gui.tar.gz
           git commit -m "Upload latest mcapi_gui macos build." || true
-          git push origin builds
+          git push origin builds --force
 
   build-windows-mingw:
     name: build mcapi_gui (windows)
@@ -170,4 +170,4 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/windows/mcapi_gui.zip
           git commit -m "Upload latest mcapi_gui windows build." || Write-Host "No changes"
-          git push origin builds
+          git push origin builds --force
