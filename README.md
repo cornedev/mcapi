@@ -1,4 +1,4 @@
-<p align="center"><img width="256px" src="gfx/mcapi.png"></p>
+<p align="center"><img width="256px" src="gfx/mcapi_builds.png"></p>
 
 # mcapi
 An API for downloading minecraft assets & launcher.
