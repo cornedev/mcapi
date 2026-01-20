@@ -23,6 +23,7 @@ The goal of this project is to create an easy-use API for downloading all sorts 
 - Fabric support.
 - Server process starting.
 - Official Microsoft account authentication with mojang servers.
+- Skin support.
 
 ## Building
 ## cli
