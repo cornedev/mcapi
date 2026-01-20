@@ -15,6 +15,10 @@ on:
       - '**/**/CMakeLists.txt'
       - '**/**/*.cpp'
       - '**/**/*.hpp'
+  
+concurrency:
+  group: mcapi-cli-builds
+  cancel-in-progress: true
 
 jobs:
   build-linux:
@@ -40,6 +44,31 @@ jobs:
       - name: build project
         run: cmake --build cli/build
 
+      - name: create package
+        run: |
+          mkdir -p dist
+          cp cli/build/mcapi_cli dist/
+          tar -czf mcapi_cli-linux.tar.gz -C dist .
+
+      - name: push latest linux build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload linux build
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p builds-branch/builds/cli/linux
+          mv mcapi_cli-linux.tar.gz builds-branch/builds/cli/linux/mcapi_cli.tar.gz
+          cd builds-branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/cli/linux/mcapi_cli.tar.gz
+          git commit -m "Upload latest mcapi_cli linux build." || true
+          git push origin builds
+
   build-macos:
     name: build mcapi_cli (macos)
     runs-on: macos-latest
@@ -58,6 +87,31 @@ jobs:
 
       - name: build project
         run: cmake --build cli/build
+
+      - name: create package
+        run: |
+          mkdir -p dist
+          cp cli/build/mcapi_cli dist/
+          tar -czf mcapi_cli-macos.tar.gz -C dist .
+
+      - name: push latest macos build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload macos build
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p builds-branch/builds/cli/macos
+          mv mcapi_cli-macos.tar.gz builds-branch/builds/cli/macos/mcapi_cli.tar.gz
+          cd builds-branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/cli/macos/mcapi_cli.tar.gz
+          git commit -m "Upload latest mcapi_cli macos build." || true
+          git push origin builds
 
   build-windows-mingw:
     name: build mcapi_cli (windows)
@@ -82,3 +136,30 @@ jobs:
         run: |
           cmake -S cli -B cli/build -G "MinGW Makefiles"
           cmake --build cli/build
+
+      - name: create package
+        shell: msys2 {0}
+        run: |
+          mkdir -p dist
+          cp cli/build/mcapi_cli.exe dist/
+          7z a mcapi_cli-windows.zip dist/*
+
+      - name: push latest windows build to builds branch
+        if: github.ref == 'refs/heads/main'
+        uses: actions/checkout@v4
+        with:
+          ref: builds
+          path: builds-branch
+
+      - name: upload windows build
+        if: github.ref == 'refs/heads/main'
+        shell: cmd
+        run: |
+          mkdir builds-branch/builds/cli/windows
+          move mcapi_cli-windows.zip builds-branch\builds\cli\windows\mcapi_cli.zip
+          cd builds-branch
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add builds/cli/windows/mcapi_cli.zip
+          git commit -m "Upload latest mcapi_cli windows build." || true
+          git push origin builds
