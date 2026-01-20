@@ -72,6 +72,8 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/linux/mcapi_gui.tar.gz
           git commit -m "Upload latest mcapi_gui linux build." || true
+          git fetch origin builds
+          git reset --hard origin/builds
           git push origin builds --force
 
   build-macos:
@@ -116,6 +118,8 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/macos/mcapi_gui.tar.gz
           git commit -m "Upload latest mcapi_gui macos build." || true
+          git fetch origin builds
+          git reset --hard origin/builds
           git push origin builds --force
 
   build-windows-mingw:
@@ -170,4 +174,6 @@ jobs:
           git config user.email "github-actions@github.com"
           git add builds/gui/windows/mcapi_gui.zip
           git commit -m "Upload latest mcapi_gui windows build." || Write-Host "No changes"
+          git fetch origin builds
+          git reset --hard origin/builds
           git push origin builds --force
