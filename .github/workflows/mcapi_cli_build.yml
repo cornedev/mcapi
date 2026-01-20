@@ -156,13 +156,14 @@ jobs:
 
       - name: upload windows build
         if: github.ref == 'refs/heads/main'
-        shell: cmd
+        shell: pwsh
         run: |
-          mkdir builds-branch/builds/cli/windows
-          move mcapi_cli-windows.zip builds-branch\builds\cli\windows\mcapi_cli.zip
-          cd builds-branch
+          Set-Location -Path builds-branch
+          $target = "builds/cli/windows"
+          if (-Not (Test-Path $target)) { New-Item -ItemType Directory -Force -Path $target }
+          Move-Item ..\mcapi_cli-windows.zip "$target\mcapi_cli.zip" -Force
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add builds/cli/windows/mcapi_cli.zip
-          git commit -m "Upload latest mcapi_cli windows build." || true
+          git commit -m "Upload latest mcapi_cli windows build." || Write-Host "No changes"
           git push origin builds
