@@ -745,7 +745,8 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             {"classpath", classpath},
             {"natives_directory", nativesdir.string()},
             {"launcher_name", "mcapi"},
-            {"launcher_version", "1.0"}
+            {"launcher_version", "1.0"},
+            {"user_properties", "{}"}
         };
         std::vector<std::string> jvmargs;
         std::vector<std::string> gameargs;
