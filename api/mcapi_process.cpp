@@ -197,4 +197,26 @@ bool StopProcess(Processhandle* process)
     #endif
 }
 
+bool DetectProcess(Processhandle* process)
+{
+    #ifdef _WIN32
+    if (!process || !*process)
+        return false;
+
+    DWORD exitcode = 0;
+    if (!GetExitCodeProcess(*process, &exitcode))
+        return false;
+
+    return exitcode == STILL_ACTIVE;
+    #else
+    if (!process || *process <= 0)
+        return false;
+
+    if (kill(*process, 0) == 0)
+        return true;
+
+    return false;
+    #endif
+}
+
 }
