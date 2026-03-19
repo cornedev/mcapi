@@ -1,659 +1,363 @@
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
-#include <filesystem>
-#include <thread>
-#include <atomic>
-#include <mutex>
-#include <vector>
-#include <string>
-#include <iostream>
-namespace fs = std::filesystem;
+#include "gui.h"
+#include "ui_gui.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-#include "../api/api.hpp"
-
-static std::vector<std::string> console;
-static std::mutex consolemutex;
-static std::atomic<bool> launching = false;
-static std::thread launchthread;
-static std::atomic<bool> running = false;
 static mcapi::Processhandle process{};
+static gui* instance = nullptr;
 
-namespace mcapi_gui
-{
-
-    GLuint LoadTexture(const char* filename, int* outwidth, int* outheight)
-    {
-        int width, height, channels;
-        unsigned char* data = stbi_load(filename, &width, &height, &channels, 4);
-        if (!data)
-            return 0;
-
-        GLuint texture;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-        stbi_image_free(data);
-
-        *outwidth = width;
-        *outheight = height;
-        return texture;
-    }
-
-    void Log(const std::string& msg)
-    {
-        std::lock_guard<std::mutex> lock(consolemutex);
-        console.push_back(msg);
-    }
-
-    void LaunchMinecraft(std::string username, std::string versionid, std::string manifestjson, std::string arch, std::string os)
-    {
-        // download version json.
-        auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifestjson, versionid);
-        if (!versionjsonurl)
-        {
-            Log("Version not found in manifest.\n");
-            return;
-        }
-        auto versionurl = *versionjsonurl;
-
-        Log("Downloading version json...\n");
-        auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionid);
-        if (!versionjsonopt)
-        {
-            Log("Failed to download version json.\n");
-            return;
-        }
-        Log("Version json downloaded.\n");
-        auto versionjson = *versionjsonopt;
-
-        // download client jar.
-        auto jarurlopt = mcapi::GetClientJarDownloadUrl(versionjson);
-        if (!jarurlopt)
-        {
-            Log("Failed to get client jar url.\n");
-            return;
-        }
-        auto jarurl = *jarurlopt;
-
-        Log("Downloading client jar...\n");
-        auto clientjar = mcapi::DownloadClientJar(jarurl, versionid);
-        if (!clientjar)
-        {
-            Log("Failed to download client jar.\n");
-            return;
-        }
-        Log("Client jar downloaded.\n");
-
-        // download asset index.
-        auto indexurlopt = mcapi::GetAssetIndexJsonDownloadUrl(versionjson);
-        if (!indexurlopt)
-        {
-            Log("Failed to get asset index URL.\n");
-            return;
-        }
-        auto indexurl = *indexurlopt;
-
-        Log("Downloading Asset index...\n");
-        auto assetjsonopt = mcapi::DownloadAssetIndexJson(indexurl, versionid);
-        if (!assetjsonopt)
-        {
-            Log("Failed to download asset index.\n");
-            return;
-        }
-        auto assetjson = *assetjsonopt;
-        Log("Asset index downloaded.\n");
-
-        // download assets.
-        auto assetsurlopt = mcapi::GetAssetsDownloadUrl(assetjson);
-        if (!assetsurlopt)
-        {
-            Log("Failed to get assets download urls.\n");
-            return;
-        }
-
-        Log("Downloading assets... (this may take a while)\n");
-        auto assets = mcapi::DownloadAssets(*assetsurlopt, versionid);
-        if (!assets)
-        {
-            Log("Failed to download assets.\n");
-            return;
-        }
-        Log("Assets downloaded.\n");
-
-        // conversion.
-        mcapi::OS osenum;
-        if (os == "windows")
-            osenum = mcapi::OS::Windows;
-        else if (os == "linux")
-            osenum = mcapi::OS::Linux;
-        else if (os == "macos")
-            osenum = mcapi::OS::Macos;
-        else
-        {
-            Log("Invalid OS.\n");
-            return;
-        }
-        mcapi::Arch archenum;
-        if (arch == "x64")
-            archenum = mcapi::Arch::x64;
-        else if (arch == "x32")
-            archenum = mcapi::Arch::x32;
-        else if (arch == "arm64")
-            archenum = mcapi::Arch::arm64;
-        else
-        {
-            Log("Invalid architecture.\n");
-            return;
-        }
-
-        // download java.
-        auto javaversionopt = mcapi::GetJavaVersion(versionjson);
-        if (!javaversionopt)
-        {
-            Log("Failed to get java version.\n");
-            return;
-        }
-        int javaversion = *javaversionopt;
-
-        auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
-        if (!javaurlopt)
-        {
-            Log("Failed to get java download url.\n");
-            return;
-        }
-        auto javaurl = *javaurlopt;
-
-        Log("Downloading java...\n");
-        auto javaopt = mcapi::DownloadJava(javaurl, versionid);
-        if (!javaopt)
-        {
-            Log("Failed to download java.\n");
-            return;
-        }
-        Log("Java downloaded.\n");
-        auto java = *javaopt;
-
-        // download libraries.
-        auto librariesurlopt = mcapi::GetLibrariesDownloadUrl(versionjson, osenum);
-        if (!librariesurlopt)
-        {
-            Log("Failed to get libraries.\n");
-            return;
-        }
-
-        Log("Downloading libraries...\n");
-        auto librariesdownloaded = mcapi::DownloadLibraries(*librariesurlopt, versionid);
-        if (!librariesdownloaded)
-        {
-            Log("Failed to download libraries.\n");
-            return;
-        }
-        Log("Libraries downloaded.\n");
-
-        // extract natives.
-        Log("Extracting natives...\n");
-        auto nativesurlopt = mcapi::GetLibrariesNatives(versionid, versionjson, osenum, archenum);
-        if (!nativesurlopt)
-        {
-            Log("Failed to get natives urls.\n");
-            return;
-        }
-
-        Log("Downloading natives...\n");
-        auto nativesjarsopt = mcapi::DownloadLibrariesNatives(*nativesurlopt, versionid);
-        if (!nativesjarsopt)
-        {
-            Log("Failed to download native jars.\n");
-            return;
-        }
-
-        auto nativesextracted = mcapi::ExtractLibrariesNatives(*nativesjarsopt, versionid, osenum);
-        if (!nativesextracted)
-        {
-            Log("Failed to extract natives.\n");
-            return;
-        }
-        Log("Natives extracted.\n");
-
-        // build classpath.
-        Log("Building classpath...\n");
-        fs::path datapath = ".mcapi";
-        auto classpathopt = mcapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionid / "client.jar").string(), osenum);
-        if (!classpathopt)
-        {
-            Log("Failed to build classpath.\n");
-            return;
-        }
-        auto classpath = *classpathopt;
-        Log("Classpath built.\n");
-
-        // build launch command.
-        Log("Building launch command...\n");
-        auto launchcmdopt = mcapi::GetLaunchCommand(username, classpath, versionjson, versionid, osenum);
-        if (!launchcmdopt)
-        {
-            Log("Failed to build launch command.\n");
-            return;
-        }
-        auto launchcmd = *launchcmdopt;
-        Log("Launch command built.\n");
-
-        // launch minecraft.
-        std::string javapath;
-        switch (osenum)
-        {
-            case mcapi::OS::Windows:
-                javapath = "runtime/" + versionid + "/java/bin/java.exe";
-                break;
-
-            case mcapi::OS::Linux:
-            case mcapi::OS::Macos:
-                javapath = "runtime/" + versionid + "/java/bin/java";
-                break;
-        }
-        bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process);
-        if (!launched)
-        {
-            Log("Failed to launch Minecraft.\n");
-        }
-        else
-        {
-            running = true;
-            Log("Minecraft launched.\n");
-        }
-    }
-
-    bool ComboBox(const char* id, int* indexcurrent, const char* const* items, int indexcount, bool heightsmall = true)
-    {
-        ImGui::PushItemWidth(200);
-        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));
-        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0, 0, 0, 0));
-        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0, 0, 0, 0));
-
-        ImVec2 pos  = ImGui::GetCursorScreenPos();
-        ImVec2 size(ImGui::CalcItemWidth(), ImGui::GetFrameHeight());
-        ImGui::GetWindowDrawList()->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), ImColor(0.227f, 0.216f, 0.212f, 1.0f), 4.0f);
-
-        ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.228f, 0.216f, 0.212f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.318f, 0.302f, 0.298f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.228f, 0.216f, 0.212f, 1.0f));
-
-        bool changed = false;
-        ImGuiComboFlags flags = ImGuiComboFlags_NoArrowButton;
-        if (heightsmall)
-        {
-            flags |= ImGuiComboFlags_HeightSmall;
-        }
-        bool opened = ImGui::BeginCombo(id, items[*indexcurrent], flags);
-        if (opened)
-        {
-            for (int i = 0; i < indexcount; ++i)
-            {
-                bool selected = (*indexcurrent == i);
-
-                ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.2f, 0.6f, 0.2f, 1.0f));
-                if (ImGui::Selectable(items[i], selected))
-                {
-                    *indexcurrent = i;
-                    changed = true;
-                }
-                ImGui::PopStyleColor();
-
-                if (selected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-
-        ImGui::PopStyleColor(3);
-
-        bool hovered = ImGui::IsItemHovered();
-        bool active = ImGui::IsItemActive() || opened;
-
-        ImVec2 min = ImGui::GetItemRectMin();
-        ImVec2 max = ImGui::GetItemRectMax();
-
-        ImGui::PopStyleColor(3);
-        ImGui::PopItemWidth();
-
-        ImVec4 outlinecolor =(hovered || active) ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.235f, 0.522f, 0.153f, 1.0f);
-        ImGui::GetWindowDrawList()->AddRect(min, max, ImColor(outlinecolor), 0.0f, ImDrawFlags_RoundCornersAll, 1.0f);
-        return changed;
+void ConsoleHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+    if (instance) {
+        QMetaObject::invokeMethod(instance, [msg]() {
+            instance->findChild<QPlainTextEdit*>("consolelog")->appendPlainText(msg);
+        }, Qt::QueuedConnection);
     }
 }
 
-static void glfw_error_callback(int error, const char* description)
+gui::gui(QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::gui)
 {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
+    ui->setupUi(this);
+    setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
+
+    instance = this;
+    qInstallMessageHandler(ConsoleHandler);
+
+    // consolelog box
+    ui->consolelog->setReadOnly(true);
+
+    // - version box
+    ui->versionbox->setStyleSheet("QComboBox { combobox-popup: 0; }");
+    ui->versionbox->setMaxVisibleItems(10);
+    GetVersions();
+    connect(ui->versionbox, &QComboBox::currentTextChanged, this, &gui::on_versioncombo_changed);
+
+    // - os box
+    ui->osbox->setStyleSheet("QComboBox { combobox-popup: 0; }");
+    ui->osbox->addItem("windows");
+    ui->osbox->addItem("linux");
+    ui->osbox->addItem("macos");
+    osselected = ui->osbox->currentText();
+    connect(ui->osbox, &QComboBox::currentTextChanged, this, &gui::on_oscombo_changed);
+
+    // - arch box
+    ui->archbox->setStyleSheet("QComboBox { combobox-popup: 0; }");
+    ui->archbox->addItem("x64");
+    ui->archbox->addItem("arm64");
+    ui->archbox->addItem("x32");
+    archselected = ui->archbox->currentText();
+    connect(ui->archbox, &QComboBox::currentTextChanged, this, &gui::on_archcombo_changed);
+
+    // - username input
+    connect(ui->usernameinput, &QLineEdit::textChanged, this, &gui::on_usernameinput_changed);
 }
-int main(int, char**)
+
+gui::~gui()
 {
-    static std::vector<std::string> versionids;
-    static std::vector<const char*> versionitems;
-    static int currentversion = 0;
+    qInstallMessageHandler(0);
+    instance = nullptr;
+    delete ui;
+}
 
-    static const char* archoptions[] = { "x64", "x32", "arm64" };
-    static int currentarch = 0;
+void gui::on_versioncombo_changed(const QString &version)
+{
+    versionselected = version;
+}
 
-    static const char* osoptions[] = { "windows", "linux", "macos" };
-    static int currentos = 0;
+void gui::on_oscombo_changed(const QString &os)
+{
+    osselected = os;
+}
 
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        return 1;
+void gui::on_archcombo_changed(const QString &arch)
+{
+    archselected = arch;
+}
 
-    const char* glsl_version = "#version 330";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+void gui::on_usernameinput_changed(const QString &input)
+{
+    username = input;
+}
 
-    GLFWwindow* mainwindow = glfwCreateWindow(900, 900, "mcapi_gui_launcher", nullptr, nullptr);
-    if (mainwindow == nullptr) return 1;
-    glfwMakeContextCurrent(mainwindow);
+void gui::GetVersions()
+{
+    ui->versionbox->clear();
 
-    int icon_width, icon_height, icon_channels;
-    unsigned char* icon_pixels = stbi_load("gfx/mcapi_gui.png", &icon_width, &icon_height, &icon_channels, 4);
-    if (icon_pixels)
+    try
     {
-        GLFWimage images[1];
-        images[0].width = icon_width;
-        images[0].height = icon_height;
-        images[0].pixels = icon_pixels;
-        glfwSetWindowIcon(mainwindow, 1, images);
-        stbi_image_free(icon_pixels);
+        manifest = mcapi::DownloadVersionManifest();
+        auto versions = mcapi::GetVersionsFromManifest(manifest);
+
+        if (versions->empty())
+            throw std::runtime_error("Failed to get versions.");
+
+        for (const auto &v : *versions)
+        {
+            ui->versionbox->addItem(QString::fromStdString(v));
+        }
+
+        versionselected = ui->versionbox->currentText();
     }
-    glfwSwapInterval(1);
-
-    GLuint mainbg = 0;
-    int mainbgwidth, mainbgheight;
-    const char* mainbgpath = "gfx/main.png";
-    mainbg = mcapi_gui::LoadTexture(mainbgpath, &mainbgwidth, &mainbgheight);
-    if (mainbg == 0)
+    catch (...)
     {
-        std::cout << "Failed to load background: " << mainbgpath << "\n";
+        ui->versionbox->clear();
+        ui->versionbox->addItem("1.21.11");
+        ui->versionbox->addItem("1.8.9");
+        versionselected = ui->versionbox->currentText();
+    }
+}
+
+bool gui::StartVersion(const QString &username, const QString &versionselected, const QString &archselected, const QString &osselected)
+{
+    // download version json.
+    auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionselected.toStdString());
+    if (!versionjsonurl)
+    {
+        qDebug() << "Version not found in manifest.";
+        return false;
+    }
+    auto versionurl = *versionjsonurl;
+
+    qDebug() << "Downloading version json...";
+    auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionselected.toStdString());
+    if (!versionjsonopt)
+    {
+        qDebug() << "Failed to download version json.";
+        return false;
+    }
+    qDebug() << "Version json downloaded.";
+    auto versionjson = *versionjsonopt;
+
+    // download client jar.
+    auto jarurlopt = mcapi::GetClientJarDownloadUrl(versionjson);
+    if (!jarurlopt)
+    {
+        qDebug() << "Failed to get client jar url.";
+        return false;
+    }
+    auto jarurl = *jarurlopt;
+
+    qDebug() << "Downloading client jar...";
+    auto clientjar = mcapi::DownloadClientJar(jarurl, versionselected.toStdString());
+    if (!clientjar)
+    {
+        qDebug() << "Failed to download client jar.";
+        return false;
+    }
+    qDebug() << "Client jar downloaded.";
+
+    // download asset index.
+    auto indexurlopt = mcapi::GetAssetIndexJsonDownloadUrl(versionjson);
+    if (!indexurlopt)
+    {
+        qDebug() << "Failed to get asset index URL.";
+        return false;
+    }
+    auto indexurl = *indexurlopt;
+
+    qDebug() << "Downloading Asset index...";
+    auto assetjsonopt = mcapi::DownloadAssetIndexJson(indexurl, versionselected.toStdString());
+    if (!assetjsonopt)
+    {
+        qDebug() << "Failed to download asset index.";
+        return false;
+    }
+    auto assetjson = *assetjsonopt;
+    qDebug() << "Asset index downloaded.";
+
+    // download assets.
+    auto assetsurlopt = mcapi::GetAssetsDownloadUrl(assetjson);
+    if (!assetsurlopt)
+    {
+        qDebug() << "Failed to get assets download urls.";
+        return false;
+    }
+
+    qDebug() << "Downloading assets... (this may take a while)";
+    auto assets = mcapi::DownloadAssets(*assetsurlopt, versionselected.toStdString());
+    if (!assets)
+    {
+        qDebug() << "Failed to download assets.";
+        return false;
+    }
+    qDebug() << "Assets downloaded.";
+
+    // conversion.
+    mcapi::OS osenum;
+    if (osselected == "windows")
+        osenum = mcapi::OS::Windows;
+    else if (osselected == "linux")
+        osenum = mcapi::OS::Linux;
+    else if (osselected == "macos")
+        osenum = mcapi::OS::Macos;
+    else
+    {
+        qDebug() << "Invalid OS.";
+        return false;
+    }
+    mcapi::Arch archenum;
+    if (archselected == "x64")
+        archenum = mcapi::Arch::x64;
+    else if (archselected == "x32")
+        archenum = mcapi::Arch::x32;
+    else if (archselected == "arm64")
+        archenum = mcapi::Arch::arm64;
+    else
+    {
+        qDebug() << "Invalid architecture.";
+        return false;
+    }
+
+    // download java.
+    auto javaversionopt = mcapi::GetJavaVersion(versionjson);
+    if (!javaversionopt)
+    {
+        qDebug() << "Failed to get java version.";
+        return false;
+    }
+    int javaversion = *javaversionopt;
+
+    auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
+    if (!javaurlopt)
+    {
+        qDebug() << "Failed to get java download url.";
+        return false;
+    }
+    auto javaurl = *javaurlopt;
+
+     qDebug() << "Downloading java...";
+    auto javaopt = mcapi::DownloadJava(javaurl, versionselected.toStdString());
+    if (!javaopt)
+    {
+        qDebug() << "Failed to download java.";
+        return false;
+    }
+    qDebug() << "Java downloaded.";
+    auto java = *javaopt;
+
+    // download libraries.
+    auto librariesurlopt = mcapi::GetLibrariesDownloadUrl(versionjson, osenum);
+    if (!librariesurlopt)
+    {
+        qDebug() << "Failed to get libraries.";
+        return false;
+    }
+
+    qDebug() << "Downloading libraries...";
+    auto librariesdownloaded = mcapi::DownloadLibraries(*librariesurlopt, versionselected.toStdString());
+    if (!librariesdownloaded)
+    {
+        qDebug() << "Failed to download libraries.";
+        return false;
+    }
+    qDebug() << "Libraries downloaded.";
+
+    // extract natives.
+    qDebug() << "Extracting natives...";
+    auto nativesurlopt = mcapi::GetLibrariesNatives(versionselected.toStdString(), versionjson, osenum, archenum);
+    if (!nativesurlopt)
+    {
+        qDebug() << "Failed to get natives urls.";
+        return false;
+    }
+
+    qDebug() <<"Downloading natives...";
+    auto nativesjarsopt = mcapi::DownloadLibrariesNatives(*nativesurlopt, versionselected.toStdString());
+    if (!nativesjarsopt)
+    {
+        qDebug() << "Failed to download native jars.";
+        return false;
+    }
+
+    auto nativesextracted = mcapi::ExtractLibrariesNatives(*nativesjarsopt, versionselected.toStdString(), osenum);
+    if (!nativesextracted)
+    {
+        qDebug() << "Failed to extract natives.";
+        return false;
+    }
+    qDebug() << "Natives extracted.";
+
+    // build classpath.
+    qDebug() << "Building classpath...";
+    fs::path datapath = ".mcapi";
+    auto classpathopt = mcapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionselected.toStdString() / "client.jar").string(), osenum);
+    if (!classpathopt)
+    {
+        qDebug() << "Failed to build classpath.";
+        return false;
+    }
+    auto classpath = *classpathopt;
+    qDebug() << "Classpath built.";
+
+    // build launch command.
+    qDebug() << "Building launch command...";
+    auto launchcmdopt = mcapi::GetLaunchCommand(username.toStdString(), classpath, versionjson, versionselected.toStdString(), osenum);
+    if (!launchcmdopt)
+    {
+        qDebug() << "Failed to build launch command.";
+        return false;
+    }
+    auto launchcmd = *launchcmdopt;
+    qDebug() << "Launch command built.";
+
+    // launch minecraft.
+    std::string javapath;
+    switch (osenum)
+    {
+    case mcapi::OS::Windows:
+        javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java.exe";
+        break;
+
+    case mcapi::OS::Linux:
+    case mcapi::OS::Macos:
+        javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java";
+        break;
+    }
+    bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process);
+    if (!launched)
+    {
+        qDebug() << "Failed to launch Minecraft.";
+        return false;
     }
     else
     {
-        std::cout << "Loaded background: " << mainbgpath << "\n";
+        qDebug() << "Minecraft launched.";
+        return true;
     }
+}
 
-    GLuint playbuttonnormal = 0;
-    GLuint playbuttonhover  = 0;
-    GLuint playbuttonactive = 0;
-    const char* playbuttonnormalpath = "gfx/play_button_normal.png";
-    const char* playbuttonhoverpath = "gfx/play_button_hover.png";
-    const char* playbuttonpressedpath = "gfx/play_button_pressed.png";
-    int playbuttonwidth, playbuttonheight;
-    playbuttonnormal = mcapi_gui::LoadTexture(playbuttonnormalpath, &playbuttonwidth, &playbuttonheight);
-    playbuttonhover = mcapi_gui::LoadTexture(playbuttonhoverpath,  &playbuttonwidth, &playbuttonheight);
-    playbuttonactive = mcapi_gui::LoadTexture(playbuttonpressedpath, &playbuttonwidth, &playbuttonheight);
-    if (playbuttonnormal && playbuttonhover && playbuttonactive == 0)
+void gui::on_startbutton_clicked()
+{
+    if (running.exchange(true))
+        return;
+
+    ui->startbutton->setEnabled(false);
+
+    QFuture<void> future = QtConcurrent::run([this]() {
+        if (!StartVersion(username, versionselected, archselected, osselected))
+        {
+            running = false;
+            QMetaObject::invokeMethod(ui->startbutton, "setEnabled", Qt::QueuedConnection, Q_ARG(bool, true));
+            return;
+        }
+        while (mcapi::DetectProcess(&process))
+        {
+            QThread::sleep(1);
+        }
+        running = false;
+        QMetaObject::invokeMethod(ui->startbutton, "setEnabled", Qt::QueuedConnection, Q_ARG(bool, true));
+    });
+}
+
+void gui::on_stopbutton_clicked()
+{
+    if (!mcapi::StopProcess(&process))
     {
-        std::cout << "Failed to load texture: " << playbuttonnormalpath << " " << playbuttonhoverpath << " " << playbuttonpressedpath << "\n";
+        qDebug() << "Failed to stop Minecraft.";
     }
     else
     {
-        std::cout << "Loaded texture: " << playbuttonnormalpath << " " << playbuttonhoverpath << " " << playbuttonpressedpath << "\n";
+        qDebug() << "Minecraft stopped.";
+        running = false;
+        ui->startbutton->setEnabled(true);
     }
-
-    GLuint stopbuttonnormal = 0;
-    GLuint stopbuttonhover  = 0;
-    GLuint stopbuttonactive = 0;
-    int stopbuttonwidth, stopbuttonheight;
-    stopbuttonnormal = mcapi_gui::LoadTexture("gfx/stop_button_normal.png", &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonhover = mcapi_gui::LoadTexture("gfx/stop_button_hover.png",  &stopbuttonwidth, &stopbuttonheight);
-    stopbuttonactive = mcapi_gui::LoadTexture("gfx/stop_button_pressed.png", &stopbuttonwidth, &stopbuttonheight);
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.IniFilename = nullptr;
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForOpenGL(mainwindow, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-
-    ImFont* mainfont = io.Fonts->AddFontFromFileTTF("fonts/arial.ttf", 19.0f);
-    ImFont* consolefont = io.Fonts->AddFontFromFileTTF("fonts/arial.ttf", 16.0f);
-    IM_ASSERT(consolefont != nullptr);
-
-    char buf[64] = "";
-    std::string manifestjson;
-
-    mcapi_gui::Log("Downloading version manifest...\n");
-    manifestjson = mcapi::DownloadVersionManifest();
-    mcapi_gui::Log("Version manifest downloaded.\n");
-    if (!manifestjson.empty())
-    {
-        auto ids = mcapi::GetVersionsFromManifest(manifestjson);
-        if (ids && !ids->empty())
-        {
-            versionids = std::move(*ids);
-            mcapi_gui::Log(std::string("Loaded ") + std::to_string(versionids.size()) + " versions.\n");
-        }
-    }
-
-    while (!glfwWindowShouldClose(mainwindow))
-    {
-        if (ImGui::GetIO().WantTextInput || ImGui::IsAnyItemActive())
-            glfwPollEvents();
-        else
-            glfwWaitEventsTimeout(1.0 / 60.0);
-        if (glfwGetWindowAttrib(mainwindow, GLFW_ICONIFIED) != 0)
-        {
-            ImGui_ImplGlfw_Sleep(10);
-            continue;
-        }
-
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImDrawList* drawlist = ImGui::GetBackgroundDrawList();
-        ImVec2 screenpos = ImGui::GetMainViewport()->Pos;
-        ImVec2 screensize = ImGui::GetMainViewport()->Size;
-        drawlist->AddImage((ImTextureID)(intptr_t)mainbg, screenpos, ImVec2(screenpos.x + screensize.x, screenpos.y + screensize.y));
-
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(900, 800), ImGuiCond_Once);
-        ImGuiWindowFlags main_window_flags = ImGuiWindowFlags_NoResize
-                              | ImGuiWindowFlags_NoSavedSettings
-                              | ImGuiWindowFlags_NoDocking
-                              | ImGuiWindowFlags_NoMove
-                              | ImGuiWindowFlags_NoCollapse
-                              | ImGuiWindowFlags_NoTitleBar
-                              | ImGuiWindowFlags_NoBackground
-                              | ImGuiWindowFlags_NoScrollbar
-                              | ImGuiWindowFlags_NoBringToFrontOnFocus;
-        {
-            ImGui::PushFont(mainfont);
-            ImGui::Begin("mcapi_gui", nullptr, main_window_flags);
-
-            // - username inputtext.
-            ImGui::SetCursorPos(ImVec2(635, 520));
-
-            ImGui::PushItemWidth(200);
-            ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.22745f, 0.21569f, 0.21176f, 1.0f));
-
-            ImGui::InputText("##username", buf, 64);
-
-            ImGui::PopStyleColor();
-            ImGui::PopItemWidth();
-
-            ImVec4 outlinecolor =(ImGui::IsItemHovered() || ImGui::IsItemActive()) ? ImVec4(1.0f, 1.0f, 1.0f, 1.0f) : ImVec4(0.235f, 0.522f, 0.153f, 1.0f);
-            ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(outlinecolor), 0.0f, ImDrawFlags_RoundCornersAll, 1.0f);
-            // - end username inputtext.
-
-            // - architecture select combobox.
-            ImGui::SetCursorPos(ImVec2(15, 620));
-            mcapi_gui::ComboBox("##archcombo", &currentarch, archoptions, IM_ARRAYSIZE(archoptions));
-            // - end architecture select combobox.
-
-            // - os select combobox.
-            ImGui::SetCursorPos(ImVec2(15, 715));
-            mcapi_gui::ComboBox("##oscombo", &currentos, osoptions, IM_ARRAYSIZE(osoptions));
-            // - end os select combobox.
-
-            // - version select combobox.
-            ImGui::SetCursorPos(ImVec2(70, 520));
-            versionitems.clear();
-            for (const auto& v : versionids)
-                versionitems.push_back(v.c_str());
-            if (!versionitems.empty())
-            {
-                mcapi_gui::ComboBox("##versioncombo", &currentversion, versionitems.data(), static_cast<int>(versionitems.size()), false);
-            }
-            else
-            {
-                mcapi_gui::Log("Versions not yet loaded.");
-            }
-            // - end version select combobox.
-
-            // - play button
-            ImGui::SetCursorPos(ImVec2(331, 495));
-            ImGui::InvisibleButton("playbutton", ImVec2(238, 54));
-            GLuint playtex = playbuttonnormal;
-            if (ImGui::IsItemActive())
-            {
-                playtex = playbuttonactive;
-            }
-            else if (ImGui::IsItemHovered())
-            {
-                playtex = playbuttonhover;
-            }
-            if (ImGui::IsItemClicked())
-            {
-                std::string username(buf);
-                std::string arch = archoptions[currentarch];
-                std::string os = osoptions[currentos];
-                if (username.empty())
-                {
-                    mcapi_gui::Log("Please enter a username.\n");
-                }
-                else 
-                {
-                    if (launching == true)
-                    {
-                        mcapi_gui::Log("Minecraft already launching.");
-                    }
-                    else if (launching == false && !versionids.empty() && currentversion < static_cast<int>(versionids.size()))
-                    {
-                        std::string versionid = versionids[currentversion];
-
-                        launching = true;
-                        launchthread = std::thread([=]()
-                        {
-                            try
-                            {
-                                mcapi_gui::LaunchMinecraft(username, versionid, manifestjson, arch, os);
-                            }
-                            catch (const std::exception& e)
-                            {
-                                mcapi_gui::Log(std::string("Launcher crashed: ") + e.what());
-                            }
-                            catch (...)
-                            {
-                                mcapi_gui::Log("Unknown error.");
-                            }
-                            launching = false;
-                        });
-                        launchthread.detach();
-                    }
-                }
-            }
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)playtex, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-            // - end play button
-
-            // - stop process button
-            ImGui::SetCursorPos(ImVec2(575, 495));
-            ImGui::InvisibleButton("stopbutton", ImVec2(54, 54));
-            GLuint stoptex = stopbuttonnormal;
-            if (ImGui::IsItemActive())
-            {
-                stoptex = stopbuttonactive;
-            }
-            else if (ImGui::IsItemHovered())
-            {
-                stoptex = stopbuttonhover;
-            }
-            if (ImGui::IsItemClicked())
-            {
-                if (!mcapi::StopProcess(&process))
-                {
-                    mcapi_gui::Log("Failed to stop Minecraft.\n");
-                }
-                else
-                {
-                    running = false;
-                    mcapi_gui::Log("Minecraft stopped.\n");
-                }
-            }
-            ImGui::GetWindowDrawList()->AddImage((ImTextureID)(intptr_t)stoptex, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-            // - end stop process button
-
-            ImGui::End();
-            ImGui::PopFont();
-        }
-
-        ImGui::SetNextWindowPos(ImVec2(225, 605), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(450, 280), ImGuiCond_Once);
-        ImGuiWindowFlags console_window_flags = ImGuiWindowFlags_NoResize
-                              | ImGuiWindowFlags_NoSavedSettings
-                              | ImGuiWindowFlags_NoDocking
-                              | ImGuiWindowFlags_NoMove
-                              | ImGuiWindowFlags_NoCollapse
-                              | ImGuiWindowFlags_NoTitleBar;
-        {
-            ImGui::PushFont(consolefont);
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.227f, 0.216f, 0.212f, 1.0f));
-            ImGui::Begin("console", nullptr, console_window_flags);
-
-            static bool autoscroll = true;
-            {
-                std::lock_guard<std::mutex> lock(consolemutex);
-                if (ImGui::GetScrollY() < ImGui::GetScrollMaxY())
-                    autoscroll = false;
-                else
-                    autoscroll = true;
-                for (const auto& line : console)
-                {
-                    ImGui::TextUnformatted(line.c_str());
-                }
-                if (autoscroll)
-                    ImGui::SetScrollHereY(1.0f);
-            }
-
-            ImGui::End();
-            ImGui::PopStyleColor();
-            ImGui::PopFont();
-        }
-
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(mainwindow, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(0.12f, 0.12f, 0.12f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        glfwSwapBuffers(mainwindow);
-    }
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-    glfwDestroyWindow(mainwindow);
-    glfwTerminate();
-    return 0;
 }

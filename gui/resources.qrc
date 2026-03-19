@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>gfx/mcapi_logo.png</file>
+        <file>gfx/mcapi_gui.ico</file>
+        <file>gfx/mcapi_gui.png</file>
+    </qresource>
+</RCC>
