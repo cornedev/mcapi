@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 
 project(mcapi_gui LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Concurrent)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Concurrent)
 find_package(nlohmann_json REQUIRED)
 find_package(LibArchive REQUIRED)
 if(NOT WIN32)
