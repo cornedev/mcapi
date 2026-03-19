@@ -68,19 +68,20 @@ else()
     )
 endif()
 
-file(GLOB PLATFORMS "${PLATFORMS_DIR}/*.dll")
-add_custom_command(TARGET mcapi_gui POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            $<TARGET_FILE_DIR:mcapi_gui>/platforms
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${PLATFORMS}
-            $<TARGET_FILE_DIR:mcapi_gui>/platforms
-)
+if(WIN32)
+    file(GLOB PLATFORMS "${PLATFORMS_DIR}/*.dll")
+
+    add_custom_command(TARGET mcapi_gui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                $<TARGET_FILE_DIR:mcapi_gui>/platforms
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${PLATFORMS}
+                $<TARGET_FILE_DIR:mcapi_gui>/platforms
+    )
+endif()
 
 if(WIN32)
-    file(GLOB RUNTIME_DLLS
-        "${RUNTIME_BIN_DIR}/*.dll"
-    )
+    file(GLOB RUNTIME_DLLS "${RUNTIME_BIN_DIR}/*.dll")
 
     add_custom_command(TARGET mcapi_gui POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -92,7 +93,7 @@ endif()
 
 qt_generate_deploy_app_script(
     TARGET mcapi_gui
-    OUTPUT_SCRIPT deploy_script
+    SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
