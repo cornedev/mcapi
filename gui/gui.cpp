@@ -87,7 +87,7 @@ void gui::GetVersions()
         manifest = mcapi::DownloadVersionManifest();
         auto versions = mcapi::GetVersionsFromManifest(manifest);
 
-        if (versions->empty())
+        if (!versions || versions->empty())
             throw std::runtime_error("Failed to get versions.");
 
         for (const auto &v : *versions)
