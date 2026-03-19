@@ -90,10 +90,3 @@ if(WIN32)
         COMMENT "Copying runtime dlls to build directory..."
     )
 endif()
-
-qt_generate_deploy_app_script(
-    TARGET mcapi_gui
-    SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
