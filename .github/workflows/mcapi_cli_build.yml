@@ -51,24 +51,10 @@ jobs:
         run: |
           tar -czf mcapi_cli-linux.tar.gz -C cli/build .
 
-      - name: push latest linux build to builds branch
-        if: github.ref == 'refs/heads/main'
-        uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
         with:
-          ref: builds
-          path: builds-branch
-
-      - name: upload linux build
-        if: github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p builds-branch/builds/cli/linux
-          mv mcapi_cli-linux.tar.gz builds-branch/builds/cli/linux/mcapi_cli.tar.gz
-          cd builds-branch
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add builds/cli/linux/mcapi_cli.tar.gz
-          git commit -m "Upload latest mcapi_cli linux build." || true
-          git push origin builds --force
+          name: linux-build
+          path: mcapi_cli-linux.tar.gz
 
   build-macos:
     name: build mcapi_cli (macos)
@@ -93,24 +79,10 @@ jobs:
         run: |
           tar -czf mcapi_cli-macos.tar.gz -C cli/build .
 
-      - name: push latest macos build to builds branch
-        if: github.ref == 'refs/heads/main'
-        uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
         with:
-          ref: builds
-          path: builds-branch
-
-      - name: upload macos build
-        if: github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p builds-branch/builds/cli/macos
-          mv mcapi_cli-macos.tar.gz builds-branch/builds/cli/macos/mcapi_cli.tar.gz
-          cd builds-branch
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add builds/cli/macos/mcapi_cli.tar.gz
-          git commit -m "Upload latest mcapi_cli macos build." || true
-          git push origin builds --force
+          name: macos-build
+          path: mcapi_cli-macos.tar.gz
 
   build-windows-mingw:
     name: build mcapi_cli (windows)
@@ -141,23 +113,38 @@ jobs:
         run: |
           Compress-Archive -Path cli/build/* -DestinationPath mcapi_cli-windows.zip
 
-      - name: push latest windows build to builds branch
-        if: github.ref == 'refs/heads/main'
-        uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: mcapi_cli-windows.zip
+
+  publish:
+    name: publish builds
+    needs: [build-linux, build-macos, build-windows-mingw]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+  
+    steps:
+      - uses: actions/checkout@v4
         with:
           ref: builds
-          path: builds-branch
-
-      - name: upload windows build
-        if: github.ref == 'refs/heads/main'
-        shell: pwsh
+  
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+  
+      - name: copy builds
         run: |
-          Set-Location -Path builds-branch
-          $target = "builds/cli/windows"
-          if (-Not (Test-Path $target)) { New-Item -ItemType Directory -Force -Path $target }
-          Move-Item ..\mcapi_cli-windows.zip "$target\mcapi_cli.zip" -Force
+          mkdir -p builds/cli/linux builds/cli/macos builds/cli/windows
+  
+          cp artifacts/linux-build/* builds/cli/linux/mcapi_cli.tar.gz
+          cp artifacts/macos-build/* builds/cli/macos/mcapi_cli.tar.gz
+          cp artifacts/windows-build/* builds/cli/windows/mcapi_cli.zip
+  
+      - name: push builds
+        run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add builds/cli/windows/mcapi_cli.zip
-          git commit -m "Upload latest mcapi_cli windows build." || Write-Host "No changes"
-          git push origin builds --force
+          git add builds
+          git commit -m "Update all builds" || true
+          git push origin builds
