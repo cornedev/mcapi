@@ -20,13 +20,15 @@ The goal of this project is to create an easy-use API for downloading all sorts 
     - Full cross-platform support (windows, macos and linux)
     - A gui application using this API
 ## Planned
+- Official Microsoft account authentication with mojang servers.
 - Fabric support.
 - Server process starting.
-- Official Microsoft account authentication with mojang servers.
 - Skin support.
 
 ## Building
 ## cli
+Note: the cli application is not being updated anymore, it's archived and located [here.](api/archived/cli) if you still would like to build it, make sure to move the cli folder to the repository root first. 
+I can't guarantee the cli application will still work in future API changes.
 ### Windows
 1. Download the latest version of [MSYS2](https://www.msys2.org/). After installation open the MINGW64 shell.
 2. Install the following dependencies:
