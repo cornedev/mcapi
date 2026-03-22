@@ -459,6 +459,13 @@ void gui::on_startbutton_clicked()
     if (running.exchange(true))
         return;
 
+    if (ui->usernameinput->text().trimmed().isEmpty())
+    {
+        qDebug() << "Please enter an username.";
+        running = false;
+        return;
+    }
+
     ui->startbutton->setEnabled(false);
 
     QFuture<void> future = QtConcurrent::run([this]() {
