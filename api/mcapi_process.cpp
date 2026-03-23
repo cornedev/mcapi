@@ -3,7 +3,7 @@
 namespace mcapi
 {
 
-bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process)
+bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process, bool qt)
 {
     if (!std::filesystem::exists(javapath))
     {
@@ -22,18 +22,18 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
             sa.nLength = sizeof(sa);
             sa.bInheritHandle = TRUE;
 
-            HANDLE outRead = nullptr, outWrite = nullptr;
-            HANDLE errRead = nullptr, errWrite = nullptr;
+            HANDLE outread = nullptr, outwrite = nullptr;
+            HANDLE errread = nullptr, errwrite = nullptr;
 
-            if (!CreatePipe(&outRead, &outWrite, &sa, 0) ||
-                !SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0))
+            if (!CreatePipe(&outread, &outwrite, &sa, 0) ||
+                !SetHandleInformation(outread, HANDLE_FLAG_INHERIT, 0))
             {
                 std::cout << "Failed to create stdout pipe.\n";
                 return false;
             }
 
-            if (!CreatePipe(&errRead, &errWrite, &sa, 0) ||
-                !SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0))
+            if (!CreatePipe(&errread, &errwrite, &sa, 0) ||
+                !SetHandleInformation(errread, HANDLE_FLAG_INHERIT, 0))
             {
                 std::cout << "Failed to create stderr pipe.\n";
                 return false;
@@ -42,8 +42,8 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
             STARTUPINFOA si{};
             PROCESS_INFORMATION pi{};
             si.cb = sizeof(si);
-            si.hStdOutput = outWrite;
-            si.hStdError  = errWrite;
+            si.hStdOutput = outwrite;
+            si.hStdError  = errwrite;
             si.dwFlags = STARTF_USESTDHANDLES;
 
             BOOL success = CreateProcessA(
@@ -59,8 +59,8 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
                 &pi
             );
 
-            CloseHandle(outWrite);
-            CloseHandle(errWrite);
+            CloseHandle(outwrite);
+            CloseHandle(errwrite);
 
             if (!success)
             {
@@ -70,26 +70,32 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
             *process = pi.hProcess;
             CloseHandle(pi.hThread);
 
-            std::thread([outRead]() {
+            std::thread([outread, qt]() {
                 char buf[1024];
                 DWORD read;
-                while (ReadFile(outRead, buf, sizeof(buf) - 1, &read, nullptr) && read > 0)
+                while (ReadFile(outread, buf, sizeof(buf) - 1, &read, nullptr) && read > 0)
                 {
                     buf[read] = 0;
-                    std::cout << buf;
+                    if (qt)
+                        qDebug() << buf;
+                    else
+                        std::cout << buf;
                 }
-                CloseHandle(outRead);
+                CloseHandle(outread);
             }).detach();
 
-            std::thread([errRead]() {
+            std::thread([errread, qt]() {
                 char buf[1024];
                 DWORD read;
-                while (ReadFile(errRead, buf, sizeof(buf) - 1, &read, nullptr) && read > 0)
+                while (ReadFile(errread, buf, sizeof(buf) - 1, &read, nullptr) && read > 0)
                 {
                     buf[read] = 0;
-                    std::cout << buf;
+                    if (qt)
+                        qDebug() << buf;
+                    else
+                        std::cout << buf;
                 }
-                CloseHandle(errRead);
+                CloseHandle(errread);
             }).detach();
 
             return true;
@@ -109,10 +115,10 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
                 return false;
             }
 
-            int outPipe[2];
-            int errPipe[2];
+            int outpipe[2];
+            int errpipe[2];
 
-            if (pipe(outPipe) != 0 || pipe(errPipe) != 0)
+            if (pipe(outpipe) != 0 || pipe(errpipe) != 0)
             {
                 std::cout << "Failed to create pipes.\n";
                 return false;
@@ -127,13 +133,13 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
 
             if (pid == 0)
             {
-                dup2(outPipe[1], STDOUT_FILENO);
-                dup2(errPipe[1], STDERR_FILENO);
+                dup2(outpipe[1], STDOUT_FILENO);
+                dup2(errpipe[1], STDERR_FILENO);
 
-                close(outPipe[0]);
-                close(outPipe[1]);
-                close(errPipe[0]);
-                close(errPipe[1]);
+                close(outpipe[0]);
+                close(outpipe[1]);
+                close(errpipe[0]);
+                close(errpipe[1]);
 
                 std::string cmd = "\"" + javapath + "\" " + args;
                 execl("/bin/sh", "sh", "-c", cmd.c_str(), (char*)nullptr);
@@ -141,22 +147,28 @@ bool StartProcess(const std::string& javapath, const std::string& args, OS os, P
             }
             *process = pid;
 
-            close(outPipe[1]);
-            close(errPipe[1]);
+            close(outpipe[1]);
+            close(errpipe[1]);
 
-            std::thread([fd = outPipe[0]]() {
+            std::thread([fd = outpipe[0], qt]() {
                 char buf[1024];
                 ssize_t n;
                 while ((n = read(fd, buf, sizeof(buf))) > 0)
-                    std::cout.write(buf, n);
+                    if (qt)
+                        qDebug() << QString::fromUtf8(buf, n);
+                    else
+                        std::cout.write(buf, n);
                 close(fd);
             }).detach();
 
-            std::thread([fd = errPipe[0]]() {
+            std::thread([fd = errpipe[0], qt]() {
                 char buf[1024];
                 ssize_t n;
                 while ((n = read(fd, buf, sizeof(buf))) > 0)
-                    std::cout.write(buf, n);
+                    if (qt)
+                        qDebug() << QString::fromUtf8(buf, n);
+                    else
+                        std::cout.write(buf, n);
                 close(fd);
             }).detach();
 
