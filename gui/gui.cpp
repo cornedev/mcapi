@@ -234,6 +234,7 @@ bool gui::StartVersion(const QString &username, const QString &versionselected, 
             }
         }
         qDebug() << "Minecraft version not supported on offline fallback.";
+        return false;
     }
     // - end offline fallbacks.
 
