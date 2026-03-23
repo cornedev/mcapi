@@ -5,6 +5,8 @@ An API for downloading minecraft assets & launcher.
 
 The goal of this project is to create an easy-use API for downloading all sorts of assets from mojangs servers, and to create a lightweight launcher that can be used anywhere.
 
+Download the latest builds at the [builds branch](https://github.com/cornedev/mcapi/tree/builds).
+
 ## Features
 - API
     - Version json downloading.
@@ -134,13 +136,9 @@ If you ever want to clean or rebuild (for both applications):
    And run the build commands again.
 
 ## Showcase
-### cli launcher
-<img src="gfx/mcapi_cli_showcase.png" alt="mcapi_cli" width="500">
 
 ### gui launcher
 <img src="gfx/mcapi_gui_showcase.png" alt="mcapi_gui" width="450">
-
-Note: these showcase images are outdated!
 
 ## License
 All the code is licensed under the [MIT license](LICENSE).
