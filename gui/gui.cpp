@@ -171,7 +171,7 @@ bool gui::StartVersion(const QString &username, const QString &versionselected, 
                 " --accessToken 0"
                 " --versionType release";
 
-            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process);
+            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
             if (!launched)
             {
                 qDebug() << "Failed to launch Minecraft. (offline fallback)";
@@ -221,7 +221,7 @@ bool gui::StartVersion(const QString &username, const QString &versionselected, 
                 " --userProperties {}"
                 " --userType mojang";
 
-            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process);
+            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
             if (!launched)
             {
                 qDebug() << "Failed to launch Minecraft. (offline fallback)";
