@@ -1,9 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <optional>
-
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -11,8 +7,13 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #endif
+
+#include <QDebug>
 #include <curl/curl.h>
 #include <iostream>
+#include <string>
+#include <vector>
+#include <optional>
 #include <fstream>
 #include <sstream>
 #include <thread>
@@ -81,7 +82,7 @@ namespace mcapi
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
 
-    bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process);
+    bool StartProcess(const std::string& javapath, const std::string& args, OS os, Processhandle* process, bool qt = false);
     bool StopProcess(Processhandle* process);
     bool DetectProcess(Processhandle* process);
 }
