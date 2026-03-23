@@ -113,9 +113,8 @@ jobs:
       - name: build project
         shell: msys2 {0}
         run: |
-          cd gui
-          cmake -S . -B build -G "MinGW Makefiles"
-          cmake --build build
+          cmake -S gui -B gui/build -G "MinGW Makefiles"
+          cmake --build gui/build
 
       - name: create package
         shell: pwsh
