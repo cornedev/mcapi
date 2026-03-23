@@ -23,6 +23,7 @@ else()
 endif()
 
 qt_add_executable(mcapi_gui
+    WIN32 MACOSX_BUNDLE
     main.cpp
     gui.cpp
     gui.h
