@@ -22,7 +22,16 @@ gui::gui(QWidget *parent)
     instance = this;
     qInstallMessageHandler(ConsoleHandler);
 
-    // consolelog box.
+    // - pages.
+    ui->pages->setCurrentIndex(0);
+
+    // - continue button.
+    connect(ui->continuebutton, &QPushButton::clicked, [this]()
+    {
+        ui->pages->setCurrentIndex(1);
+    });
+
+    // - consolelog box.
     ui->consolelog->setReadOnly(true);
 
     // - version box.
