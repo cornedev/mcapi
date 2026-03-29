@@ -83,7 +83,7 @@ That's it. The executable will be in `/build/` and you can run it with:
     ```sh
     pacman -S mingw-w64-x86_64-libarchive
     pacman -S mingw-w64-x86_64-nlohmann-json
-    pacman -S mingw-w64-x86_64-glfw
+    pacman -S mingw-w64-x86_64-qt6
     pacman -S mingw-w64-x86_64-cmake
     ```
 3. Clone this repository:
@@ -105,7 +105,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 1. Get the following dependencies on your system:
    - [nlohmann/json](https://github.com/nlohmann/json)
    - [libarchive](https://github.com/libarchive/libarchive)
-   - [glfw](https://github.com/glfw/glfw)
+   - [Qt](https://github.com/qt)
    - [curl](https://github.com/curl/curl)
    - [cmake](https://github.com/Kitware/CMake)
 
