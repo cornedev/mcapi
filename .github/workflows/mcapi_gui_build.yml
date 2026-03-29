@@ -11,6 +11,7 @@ on:
       - '**/**/CMakeLists.txt'
       - '**/**/*.cpp'
       - '**/**/*.hpp'
+      - '**/**/*.ui'
   pull_request:
     branches: main
     paths:
