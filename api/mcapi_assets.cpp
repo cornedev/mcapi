@@ -17,7 +17,7 @@ static std::string GetOSNativesUrlName(OS os)
     return {};
 }
 
-std::string GetOSRuleName(OS os)
+static std::string GetOSRuleName(OS os)
 {
     switch (os)
     {
