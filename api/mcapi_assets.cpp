@@ -253,7 +253,6 @@ std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifest
     {
         return std::nullopt;
     }
-    return std::nullopt;
 }
 
 std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const std::string& versionid)
@@ -396,7 +395,6 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDown
     {
         return std::nullopt;
     }
-    return std::nullopt;
 }
 
 std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries, const std::string& versionid)
@@ -454,7 +452,6 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloa
     {
         return std::nullopt;
     }
-    return std::nullopt;
 }
 
 std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets, const std::string& versionid)
