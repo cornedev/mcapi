@@ -65,7 +65,6 @@ static bool GetRuleAllow(const json& lib, OS os)
                 applies &= (osrule["name"] == osname);
         }
 
-        // Feature-based rules (ignored unless implemented)
         if (rule.contains("features"))
         {
             applies = false;
@@ -74,7 +73,6 @@ static bool GetRuleAllow(const json& lib, OS os)
         if (applies)
             allowed = (rule["action"] == "allow");
     }
-
     return allowed;
 }
 
