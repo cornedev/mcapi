@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>console</string>
   </property>
   <widget class="QPlainTextEdit" name="consolelog">
    <property name="geometry">
