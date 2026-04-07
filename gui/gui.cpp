@@ -4,10 +4,11 @@
 static mcapi::Processhandle process{};
 static gui* instance = nullptr;
 
-void ConsoleHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-    if (instance) {
-        QMetaObject::invokeMethod(instance, [msg]() {
-            instance->findChild<QPlainTextEdit*>("consolelog")->appendPlainText(msg);
+void ConsoleHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    if (instance && instance->consolewindow) {
+        QMetaObject::invokeMethod(instance->consolewindow, [msg]() {
+            instance->consolewindow->appendmessage(msg);
         }, Qt::QueuedConnection);
     }
 }
@@ -26,13 +27,34 @@ gui::gui(QWidget *parent)
     ui->pages->setCurrentIndex(0);
 
     // - continue button.
-    connect(ui->continuebutton, &QPushButton::clicked, [this]()
+    connect(ui->offlinebutton, &QPushButton::clicked, [this]()
     {
         ui->pages->setCurrentIndex(1);
     });
 
-    // - consolelog box.
-    ui->consolelog->setReadOnly(true);
+    // - console button.
+    connect(ui->consolebutton, &QPushButton::clicked, [this]()
+    {
+        if (!consolewindow) {
+            consolewindow = new console();
+            connect(consolewindow, &QObject::destroyed, [this]()
+            {
+                consolewindow = nullptr;
+            });
+        }
+        consolewindow->show();
+        consolewindow->raise();
+        consolewindow->activateWindow();
+    });
+
+    // - loader box.
+    ui->loaderbox->setStyleSheet("QComboBox { combobox-popup: 0; }");
+    ui->loaderbox->setMaxVisibleItems(10);
+    ui->loaderbox->clear();
+    ui->loaderbox->addItem("vanilla");
+    ui->loaderbox->addItem("fabric");
+    loaderselected = ui->loaderbox->currentText();
+    connect(ui->loaderbox, &QComboBox::currentTextChanged, this, &gui::on_loadercombo_changed);
 
     // - version box.
     ui->versionbox->setStyleSheet("QComboBox { combobox-popup: 0; }");
@@ -67,6 +89,12 @@ gui::~gui()
     delete ui;
 }
 
+void gui::on_loadercombo_changed(const QString &loader)
+{
+    loaderselected = loader;
+    GetVersions();
+}
+
 void gui::on_versioncombo_changed(const QString &version)
 {
     versionselected = version;
@@ -89,15 +117,42 @@ void gui::on_usernameinput_changed(const QString &input)
 
 void gui::GetVersions()
 {
+    ui->versionbox->blockSignals(true);
     ui->versionbox->clear();
 
     try
     {
-        manifest = mcapi::DownloadVersionManifest();
-        auto versions = mcapi::GetVersionsFromManifest(manifest);
+        std::optional<std::vector<std::string>> versions;
+
+        if (loaderselected == "vanilla")
+        {
+            if (versionsvanilla)
+            {
+                versions = versionsvanilla;
+            }
+            else
+            {
+                manifest = mcapi::vanilla::DownloadVersionManifest();
+                versions = mcapi::vanilla::GetVersionsFromManifest(manifest);
+                versionsvanilla = versions;
+            }
+        }
+        else if (loaderselected == "fabric")
+        {
+            if (versionsfabric)
+            {
+                versions = versionsfabric;
+            }
+            else
+            {
+                auto meta = mcapi::fabric::DownloadVersionMeta();
+                versions = mcapi::fabric::GetVersionsFromMeta(meta);
+                versionsfabric = versions;
+            }
+        }
 
         if (!versions || versions->empty())
-            throw std::runtime_error("Failed to get versions.");
+            qDebug() << "Failed to get versions.";
 
         for (const auto &v : *versions)
         {
@@ -109,10 +164,18 @@ void gui::GetVersions()
     catch (...)
     {
         ui->versionbox->clear();
-        ui->versionbox->addItem("1.21.11");
-        ui->versionbox->addItem("1.8.9");
+        if (loaderselected == "vanilla")
+        {
+            ui->versionbox->addItem("1.21.1");
+            ui->versionbox->addItem("1.8.9");
+        }
+        else if (loaderselected == "fabric")
+        {
+            ui->versionbox->addItem("1.20.1");
+        }
         versionselected = ui->versionbox->currentText();
     }
+    ui->versionbox->blockSignals(false);
 }
 
 static QString GetOfflineClassPath(const QString& basepath)
@@ -132,12 +195,12 @@ static QString GetOfflineClassPath(const QString& basepath)
     #endif
 }
 
-bool gui::StartVersion(const QString &username, const QString &versionselected, const QString &archselected, const QString &osselected)
+bool gui::StartVersion(const QString &username, const QString &loaderselected, const QString &versionselected, const QString &archselected, const QString &osselected)
 {
     bool offlinemode = ui->schoolcheckbox->isChecked();
 
     // - offline fallbacks.
-    if (offlinemode)
+    if (offlinemode && loaderselected == "vanilla")
     {
         if (versionselected == "1.21.11")
         {
@@ -247,221 +310,484 @@ bool gui::StartVersion(const QString &username, const QString &versionselected, 
     }
     // - end offline fallbacks.
 
-    // - download version json.
-    auto versionjsonurl = mcapi::GetVersionJsonDownloadUrl(manifest, versionselected.toStdString());
-    if (!versionjsonurl)
+    if (loaderselected == "vanilla")
     {
-        qDebug() << "Version not found in manifest.";
-        return false;
-    }
-    auto versionurl = *versionjsonurl;
+        // - download version json.
+        auto versionjsonurl = mcapi::vanilla::GetVersionJsonDownloadUrl(manifest, versionselected.toStdString());
+        if (!versionjsonurl)
+        {
+            qDebug() << "Version not found in manifest.";
+            return false;
+        }
+        auto versionurl = *versionjsonurl;
 
-    qDebug() << "Downloading version json...";
-    auto versionjsonopt = mcapi::DownloadVersionJson(versionurl, versionselected.toStdString());
-    if (!versionjsonopt)
-    {
-        qDebug() << "Failed to download version json.";
-        return false;
-    }
-    qDebug() << "Version json downloaded.";
-    auto versionjson = *versionjsonopt;
+        qDebug() << "Downloading version json...";
+        auto versionjsonopt = mcapi::vanilla::DownloadVersionJson(versionurl, versionselected.toStdString());
+        if (!versionjsonopt)
+        {
+            qDebug() << "Failed to download version json.";
+            return false;
+        }
+        qDebug() << "Version json downloaded.";
+        auto versionjson = *versionjsonopt;
 
-    // - download client jar.
-    auto jarurlopt = mcapi::GetClientJarDownloadUrl(versionjson);
-    if (!jarurlopt)
-    {
-        qDebug() << "Failed to get client jar url.";
-        return false;
-    }
-    auto jarurl = *jarurlopt;
+        // - download client jar.
+        auto jarurlopt = mcapi::vanilla::GetClientJarDownloadUrl(versionjson);
+        if (!jarurlopt)
+        {
+            qDebug() << "Failed to get client jar url.";
+            return false;
+        }
+        auto jarurl = *jarurlopt;
 
-    qDebug() << "Downloading client jar...";
-    auto clientjar = mcapi::DownloadClientJar(jarurl, versionselected.toStdString());
-    if (!clientjar)
-    {
-        qDebug() << "Failed to download client jar.";
-        return false;
-    }
-    qDebug() << "Client jar downloaded.";
+        qDebug() << "Downloading client jar...";
+        auto clientjar = mcapi::vanilla::DownloadClientJar(jarurl, versionselected.toStdString());
+        if (!clientjar)
+        {
+            qDebug() << "Failed to download client jar.";
+            return false;
+        }
+        qDebug() << "Client jar downloaded.";
 
-    // - download asset index.
-    auto indexurlopt = mcapi::GetAssetIndexJsonDownloadUrl(versionjson);
-    if (!indexurlopt)
-    {
-        qDebug() << "Failed to get asset index URL.";
-        return false;
-    }
-    auto indexurl = *indexurlopt;
+        // - download asset index.
+        auto indexurlopt = mcapi::vanilla::GetAssetIndexJsonDownloadUrl(versionjson);
+        if (!indexurlopt)
+        {
+            qDebug() << "Failed to get asset index URL.";
+            return false;
+        }
+        auto indexurl = *indexurlopt;
 
-    qDebug() << "Downloading Asset index...";
-    auto assetjsonopt = mcapi::DownloadAssetIndexJson(indexurl, versionselected.toStdString());
-    if (!assetjsonopt)
-    {
-        qDebug() << "Failed to download asset index.";
-        return false;
-    }
-    auto assetjson = *assetjsonopt;
-    qDebug() << "Asset index downloaded.";
+        qDebug() << "Downloading Asset index...";
+        auto assetjsonopt = mcapi::vanilla::DownloadAssetIndexJson(indexurl, versionselected.toStdString());
+        if (!assetjsonopt)
+        {
+            qDebug() << "Failed to download asset index.";
+            return false;
+        }
+        auto assetjson = *assetjsonopt;
+        qDebug() << "Asset index downloaded.";
 
-    // - download assets.
-    auto assetsurlopt = mcapi::GetAssetsDownloadUrl(assetjson);
-    if (!assetsurlopt)
-    {
-        qDebug() << "Failed to get assets download urls.";
-        return false;
-    }
+        // - download assets.
+        auto assetsurlopt = mcapi::vanilla::GetAssetsDownloadUrl(assetjson);
+        if (!assetsurlopt)
+        {
+            qDebug() << "Failed to get assets download urls.";
+            return false;
+        }
 
-    qDebug() << "Downloading assets... (this may take a while)";
-    auto assets = mcapi::DownloadAssets(*assetsurlopt, versionselected.toStdString());
-    if (!assets)
-    {
-        qDebug() << "Failed to download assets.";
-        return false;
-    }
-    qDebug() << "Assets downloaded.";
+        qDebug() << "Downloading assets... (this may take a while)";
+        auto assets = mcapi::vanilla::DownloadAssets(*assetsurlopt, versionselected.toStdString());
+        if (!assets)
+        {
+            qDebug() << "Failed to download assets.";
+            return false;
+        }
+        qDebug() << "Assets downloaded.";
 
-    // - conversion.
-    mcapi::OS osenum;
-    if (osselected == "windows")
-        osenum = mcapi::OS::Windows;
-    else if (osselected == "linux")
-        osenum = mcapi::OS::Linux;
-    else if (osselected == "macos")
-        osenum = mcapi::OS::Macos;
-    else
-    {
-        qDebug() << "Invalid OS.";
-        return false;
-    }
-    mcapi::Arch archenum;
-    if (archselected == "x64")
-        archenum = mcapi::Arch::x64;
-    else if (archselected == "x32")
-        archenum = mcapi::Arch::x32;
-    else if (archselected == "arm64")
-        archenum = mcapi::Arch::arm64;
-    else
-    {
-        qDebug() << "Invalid architecture.";
-        return false;
-    }
+        // - conversion.
+        mcapi::OS osenum;
+        if (osselected == "windows")
+            osenum = mcapi::OS::Windows;
+        else if (osselected == "linux")
+            osenum = mcapi::OS::Linux;
+        else if (osselected == "macos")
+            osenum = mcapi::OS::Macos;
+        else
+        {
+            qDebug() << "Invalid OS.";
+            return false;
+        }
+        mcapi::Arch archenum;
+        if (archselected == "x64")
+            archenum = mcapi::Arch::x64;
+        else if (archselected == "x32")
+            archenum = mcapi::Arch::x32;
+        else if (archselected == "arm64")
+            archenum = mcapi::Arch::arm64;
+        else
+        {
+            qDebug() << "Invalid architecture.";
+            return false;
+        }
 
-    // - download java.
-    auto javaversionopt = mcapi::GetJavaVersion(versionjson);
-    if (!javaversionopt)
-    {
-        qDebug() << "Failed to get java version.";
-        return false;
-    }
-    int javaversion = *javaversionopt;
+        // - download java.
+        auto javaversionopt = mcapi::GetJavaVersion(versionjson);
+        if (!javaversionopt)
+        {
+            qDebug() << "Failed to get java version.";
+            return false;
+        }
+        int javaversion = *javaversionopt;
 
-    auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
-    if (!javaurlopt)
-    {
-        qDebug() << "Failed to get java download url.";
-        return false;
-    }
-    auto javaurl = *javaurlopt;
+        auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
+        if (!javaurlopt)
+        {
+            qDebug() << "Failed to get java download url.";
+            return false;
+        }
+        auto javaurl = *javaurlopt;
 
-     qDebug() << "Downloading java...";
-    auto javaopt = mcapi::DownloadJava(javaurl, versionselected.toStdString());
-    if (!javaopt)
-    {
-        qDebug() << "Failed to download java.";
-        return false;
-    }
-    qDebug() << "Java downloaded.";
-    auto java = *javaopt;
+         qDebug() << "Downloading java...";
+        auto javaopt = mcapi::DownloadJava(javaurl, versionselected.toStdString());
+        if (!javaopt)
+        {
+            qDebug() << "Failed to download java.";
+            return false;
+        }
+        qDebug() << "Java downloaded.";
+        auto java = *javaopt;
 
-    // - download libraries.
-    auto librariesurlopt = mcapi::GetLibrariesDownloadUrl(versionjson, osenum);
-    if (!librariesurlopt)
-    {
-        qDebug() << "Failed to get libraries.";
-        return false;
-    }
+        // - download libraries.
+        auto librariesurlopt = mcapi::vanilla::GetLibrariesDownloadUrl(versionjson, osenum);
+        if (!librariesurlopt)
+        {
+            qDebug() << "Failed to get libraries.";
+            return false;
+        }
 
-    qDebug() << "Downloading libraries...";
-    auto librariesdownloaded = mcapi::DownloadLibraries(*librariesurlopt, versionselected.toStdString());
-    if (!librariesdownloaded)
-    {
-        qDebug() << "Failed to download libraries.";
-        return false;
-    }
-    qDebug() << "Libraries downloaded.";
+        qDebug() << "Downloading libraries...";
+        auto librariesdownloaded = mcapi::vanilla::DownloadLibraries(*librariesurlopt, versionselected.toStdString());
+        if (!librariesdownloaded)
+        {
+            qDebug() << "Failed to download libraries.";
+            return false;
+        }
+        qDebug() << "Libraries downloaded.";
 
-    // - extract natives.
-    qDebug() << "Extracting natives...";
-    auto nativesurlopt = mcapi::GetLibrariesNatives(versionselected.toStdString(), versionjson, osenum, archenum);
-    if (!nativesurlopt)
-    {
-        qDebug() << "Failed to get natives urls.";
-        return false;
-    }
+        // - extract natives.
+        qDebug() << "Extracting natives...";
+        auto nativesurlopt = mcapi::vanilla::GetLibrariesNatives(versionselected.toStdString(), versionjson, osenum, archenum);
+        if (!nativesurlopt)
+        {
+            qDebug() << "Failed to get natives urls.";
+            return false;
+        }
 
-    qDebug() <<"Downloading natives...";
-    auto nativesjarsopt = mcapi::DownloadLibrariesNatives(*nativesurlopt, versionselected.toStdString());
-    if (!nativesjarsopt)
-    {
-        qDebug() << "Failed to download native jars.";
-        return false;
-    }
+        qDebug() <<"Downloading natives...";
+        auto nativesjarsopt = mcapi::vanilla::DownloadLibrariesNatives(*nativesurlopt, versionselected.toStdString());
+        if (!nativesjarsopt)
+        {
+            qDebug() << "Failed to download native jars.";
+            return false;
+        }
 
-    auto nativesextracted = mcapi::ExtractLibrariesNatives(*nativesjarsopt, versionselected.toStdString(), osenum);
-    if (!nativesextracted)
-    {
-        qDebug() << "Failed to extract natives.";
-        return false;
-    }
-    qDebug() << "Natives extracted.";
+        auto nativesextracted = mcapi::vanilla::ExtractLibrariesNatives(*nativesjarsopt, versionselected.toStdString(), osenum);
+        if (!nativesextracted)
+        {
+            qDebug() << "Failed to extract natives.";
+            return false;
+        }
+        qDebug() << "Natives extracted.";
 
-    // - build classpath.
-    qDebug() << "Building classpath...";
-    fs::path datapath = ".mcapi";
-    auto classpathopt = mcapi::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionselected.toStdString() / "client.jar").string(), osenum);
-    if (!classpathopt)
-    {
-        qDebug() << "Failed to build classpath.";
-        return false;
-    }
-    auto classpath = *classpathopt;
-    qDebug() << "Classpath built.";
+        // - build classpath.
+        qDebug() << "Building classpath...";
+        fs::path datapath = ".mcapi";
+        auto classpathopt = mcapi::vanilla::GetClassPath(versionjson, *librariesdownloaded, (datapath / "versions" / versionselected.toStdString() / "client.jar").string(), osenum);
+        if (!classpathopt)
+        {
+            qDebug() << "Failed to build classpath.";
+            return false;
+        }
+        auto classpath = *classpathopt;
+        qDebug() << "Classpath built.";
 
-    // - build launch command.
-    qDebug() << "Building launch command...";
-    auto launchcmdopt = mcapi::GetLaunchCommand(username.toStdString(), classpath, versionjson, versionselected.toStdString(), osenum);
-    if (!launchcmdopt)
-    {
-        qDebug() << "Failed to build launch command.";
-        return false;
-    }
-    auto launchcmd = *launchcmdopt;
-    qDebug() << "Launch command built.";
+        // - build launch command.
+        qDebug() << "Building launch command...";
+        auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, versionjson, versionselected.toStdString(), osenum);
+        if (!launchcmdopt)
+        {
+            qDebug() << "Failed to build launch command.";
+            return false;
+        }
+        auto launchcmd = *launchcmdopt;
+        qDebug() << "Launch command built.";
 
-    // - launch minecraft.
-    std::string javapath;
-    switch (osenum)
-    {
-    case mcapi::OS::Windows:
-        javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java.exe";
-        break;
+        // - launch minecraft.
+        std::string javapath;
+        switch (osenum)
+        {
+        case mcapi::OS::Windows:
+            javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java.exe";
+            break;
 
-    case mcapi::OS::Linux:
-    case mcapi::OS::Macos:
-        javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java";
-        break;
+        case mcapi::OS::Linux:
+        case mcapi::OS::Macos:
+            javapath = "runtime/" + versionselected.toStdString() + "/java/bin/java";
+            break;
+        }
+        bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process, true);
+        if (!launched)
+        {
+            qDebug() << "Failed to launch Minecraft.";
+            return false;
+        }
+        else
+        {
+            qDebug() << "Minecraft launched.";
+            return true;
+        }
     }
-    bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process);
-    if (!launched)
+    else if (loaderselected == "fabric")
     {
-        qDebug() << "Failed to launch Minecraft.";
-        return false;
+        // - download fabric meta.
+        auto meta = mcapi::fabric::DownloadVersionMeta();
+
+        // - download meta json that contains the loader version.
+        auto loadermetaurlopt = mcapi::fabric::GetLoaderMetaUrl(versionselected.toStdString());
+        if (!loadermetaurlopt)
+        {
+            qDebug() << "Failed to get loader meta url.";
+            return false;
+        }
+        auto loadermetaurl = *loadermetaurlopt;
+
+        auto loadermetaopt = mcapi::fabric::DownloadLoaderMeta(loadermetaurl);
+        if (!loadermetaopt)
+        {
+            qDebug() << "Failed to download loader meta.";
+            return false;
+        }
+        auto loadermeta = *loadermetaopt;
+        qDebug() << "Loader meta downloaded.";
+
+        auto loaderopt = mcapi::fabric::GetLoaderVersion(loadermeta);
+        if (!loaderopt)
+        {
+            qDebug() << "Failed to get loader version.";
+            return false;
+        }
+        auto loader = *loaderopt;
+        qDebug() << "Meta downloaded.";
+
+        QString versionid = versionselected + "-fabric-loader-" + QString::fromStdString(loader);
+
+        // - download fabric version json.
+        auto versionjsonurl = mcapi::fabric::GetLoaderJsonDownloadUrl(loader, versionselected.toStdString());
+        if (!versionjsonurl)
+        {
+            qDebug() << "Version not found in fabric manifest.";
+            return false;
+        }
+        auto versionurl = *versionjsonurl;
+        qDebug() << "succes";
+
+        qDebug() << "Downloading version json...";
+        auto loaderjsonopt = mcapi::fabric::DownloadLoaderJson(versionurl, loader, versionselected.toStdString());
+        if (!loaderjsonopt)
+        {
+            qDebug() << "Failed to download version json.";
+            return false;
+        }
+        auto loaderjson = *loaderjsonopt;
+
+        // - merge vanilla json with fabric json.
+        auto mergedjsonopt = mcapi::fabric::GetLoaderJson(loaderjson, loader, versionselected.toStdString());
+        if (!mergedjsonopt)
+        {
+            qDebug() << "Failed to create merged version json.";
+            return false;
+        }
+        auto mergedjson = *mergedjsonopt;
+
+        // - download client jar.
+        auto jarurlopt = mcapi::vanilla::GetClientJarDownloadUrl(mergedjson);
+        if (!jarurlopt)
+        {
+            qDebug() << "Failed to get client jar url.";
+            return false;
+        }
+        auto jarurl = *jarurlopt;
+
+        qDebug() << "Downloading client jar...";
+        auto clientjar = mcapi::vanilla::DownloadClientJar(jarurl, versionid.toStdString());
+        if (!clientjar)
+        {
+            qDebug() << "Failed to download client jar.";
+            return false;
+        }
+        qDebug() << "Client jar downloaded.";
+
+        // - download asset index.
+        auto indexurlopt = mcapi::vanilla::GetAssetIndexJsonDownloadUrl(mergedjson);
+        if (!indexurlopt)
+        {
+            qDebug() << "Failed to get asset index URL.";
+            return false;
+        }
+        auto indexurl = *indexurlopt;
+
+        qDebug() << "Downloading Asset index...";
+        auto assetjsonopt = mcapi::vanilla::DownloadAssetIndexJson(indexurl, versionid.toStdString());
+        if (!assetjsonopt)
+        {
+            qDebug() << "Failed to download asset index.";
+            return false;
+        }
+        auto assetjson = *assetjsonopt;
+        qDebug() << "Asset index downloaded.";
+
+        // - download assets.
+        auto assetsurlopt = mcapi::vanilla::GetAssetsDownloadUrl(assetjson);
+        if (!assetsurlopt)
+        {
+            qDebug() << "Failed to get assets download urls.";
+            return false;
+        }
+
+        qDebug() << "Downloading assets... (this may take a while)";
+        auto assets = mcapi::vanilla::DownloadAssets(*assetsurlopt, versionid.toStdString());
+        if (!assets)
+        {
+            qDebug() << "Failed to download assets.";
+            return false;
+        }
+        qDebug() << "Assets downloaded.";
+
+        // - conversion.
+        mcapi::OS osenum;
+        if (osselected == "windows")
+            osenum = mcapi::OS::Windows;
+        else if (osselected == "linux")
+            osenum = mcapi::OS::Linux;
+        else if (osselected == "macos")
+            osenum = mcapi::OS::Macos;
+        else
+        {
+            qDebug() << "Invalid OS.";
+            return false;
+        }
+        mcapi::Arch archenum;
+        if (archselected == "x64")
+            archenum = mcapi::Arch::x64;
+        else if (archselected == "x32")
+            archenum = mcapi::Arch::x32;
+        else if (archselected == "arm64")
+            archenum = mcapi::Arch::arm64;
+        else
+        {
+            qDebug() << "Invalid architecture.";
+            return false;
+        }
+
+        // - download java.
+        auto javaversionopt = mcapi::GetJavaVersion(mergedjson);
+        if (!javaversionopt)
+        {
+            qDebug() << "Failed to get java version.";
+            return false;
+        }
+        int javaversion = *javaversionopt;
+
+        auto javaurlopt = mcapi::GetJavaDownloadUrl(javaversion, osenum, archenum);
+        if (!javaurlopt)
+        {
+            qDebug() << "Failed to get java download url.";
+            return false;
+        }
+        auto javaurl = *javaurlopt;
+
+        qDebug() << "Downloading java...";
+        auto javaopt = mcapi::DownloadJava(javaurl, versionid.toStdString());
+        if (!javaopt)
+        {
+            qDebug() << "Failed to download java.";
+            return false;
+        }
+        qDebug() << "Java downloaded.";
+        auto java = *javaopt;
+
+        // - download libraries.
+        auto librariesurlopt = mcapi::fabric::GetLoaderLibrariesDownloadUrl(mergedjson, osenum);
+        if (!librariesurlopt)
+        {
+            qDebug() << "Failed to get libraries.";
+            return false;
+        }
+
+        qDebug() << "Downloading libraries...";
+        auto librariesdownloaded = mcapi::vanilla::DownloadLibraries(*librariesurlopt, versionid.toStdString());
+        if (!librariesdownloaded)
+        {
+            qDebug() << "Failed to download libraries.";
+            return false;
+        }
+        qDebug() << "Libraries downloaded.";
+
+        // - extract natives.
+        qDebug() << "Extracting natives...";
+        auto nativesurlopt = mcapi::vanilla::GetLibrariesNatives(versionid.toStdString(), mergedjson, osenum, archenum);
+        if (!nativesurlopt)
+        {
+            qDebug() << "Failed to get natives urls.";
+            return false;
+        }
+
+        qDebug() <<"Downloading natives...";
+        auto nativesjarsopt = mcapi::vanilla::DownloadLibrariesNatives(*nativesurlopt, versionid.toStdString());
+        if (!nativesjarsopt)
+        {
+            qDebug() << "Failed to download native jars.";
+            return false;
+        }
+
+        auto nativesextracted = mcapi::vanilla::ExtractLibrariesNatives(*nativesjarsopt, versionid.toStdString(), osenum);
+        if (!nativesextracted)
+        {
+            qDebug() << "Failed to extract natives.";
+            return false;
+        }
+        qDebug() << "Natives extracted.";
+
+        // - build classpath.
+        qDebug() << "Building classpath...";
+        fs::path datapath = ".mcapi";
+        auto classpathopt = mcapi::vanilla::GetClassPath(mergedjson, *librariesdownloaded, (datapath / "versions" / versionid.toStdString() / "client.jar").string(), osenum);
+        if (!classpathopt)
+        {
+            qDebug() << "Failed to build classpath.";
+            return false;
+        }
+        auto classpath = *classpathopt;
+        qDebug() << "Classpath built.";
+
+        // - build launch command.
+        qDebug() << "Building launch command...";
+        auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, mergedjson, versionid.toStdString(), osenum);
+        if (!launchcmdopt)
+        {
+            qDebug() << "Failed to build launch command.";
+            return false;
+        }
+        auto launchcmd = *launchcmdopt;
+        qDebug() << "Launch command built.";
+
+        // - launch minecraft.
+        std::string javapath;
+        switch (osenum)
+        {
+        case mcapi::OS::Windows:
+            javapath = "runtime/" + versionid.toStdString() + "/java/bin/java.exe";
+            break;
+
+        case mcapi::OS::Linux:
+        case mcapi::OS::Macos:
+            javapath = "runtime/" + versionid.toStdString() + "/java/bin/java";
+            break;
+        }
+        bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process, true);
+        if (!launched)
+        {
+            qDebug() << "Failed to launch Minecraft.";
+            return false;
+        }
+        else
+        {
+            qDebug() << "Minecraft launched.";
+            return true;
+        }
     }
-    else
-    {
-        qDebug() << "Minecraft launched.";
-        return true;
-    }
+    return false;
 }
 
 void gui::on_startbutton_clicked()
@@ -479,7 +805,7 @@ void gui::on_startbutton_clicked()
     ui->startbutton->setEnabled(false);
 
     QFuture<void> future = QtConcurrent::run([this]() {
-        if (!StartVersion(username, versionselected, archselected, osselected))
+        if (!StartVersion(username, loaderselected, versionselected, archselected, osselected))
         {
             running = false;
             QMetaObject::invokeMethod(ui->startbutton, "setEnabled", Qt::QueuedConnection, Q_ARG(bool, true));

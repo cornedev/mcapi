@@ -10,6 +10,8 @@
 
 #include "../api/api.hpp"
 
+#include "console.h"
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class gui;
@@ -23,9 +25,11 @@ class gui : public QWidget
 public:
     explicit gui(QWidget *parent = nullptr);
     ~gui() override;
+    console* consolewindow = nullptr;
 
 private slots:
     void on_startbutton_clicked();
+    void on_loadercombo_changed(const QString &loader);
     void on_versioncombo_changed(const QString &version);
     void on_oscombo_changed(const QString &os);
     void on_archcombo_changed(const QString &os);
@@ -36,9 +40,13 @@ private slots:
 private:
     Ui::gui *ui;
 
+    std::optional<std::vector<std::string>> versionsvanilla;
+    std::optional<std::vector<std::string>> versionsfabric;
+
     std::string manifest;
     std::atomic<bool> running{false};
 
+    QString loaderselected;
     QString versionselected;
     QString osselected;
     QString archselected;
@@ -46,6 +54,6 @@ private:
     QString username;
 
     void GetVersions();
-    bool StartVersion(const QString &username, const QString &versionselected, const QString &archselected, const QString &osselected);
+    bool StartVersion(const QString &username, const QString &loaderselected, const QString &versionselected, const QString &archselected, const QString &osselected);
 };
 #endif // GUI_H

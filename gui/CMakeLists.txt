@@ -29,10 +29,12 @@ qt_add_executable(mcapi_gui
     gui.h
     gui.ui
     resources.qrc
-    ../api/mcapi_assets.cpp
+    ../api/mcapi_vanilla.cpp
     ../api/mcapi_process.cpp
     ../api/mcapi_java.cpp
+    ../api/mcapi_fabric.cpp
     ${ICON_RC}
+    console.h console.cpp console.ui
 )
 
 target_link_libraries(mcapi_gui PRIVATE
