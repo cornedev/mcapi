@@ -3,9 +3,7 @@
 namespace mcapi
 {
 
-static fs::path datapath = ".mcapi";
-
-// - helpers
+// - helpers.
 static std::string GetOSNativesUrlName(OS os)
 {
     switch (os)
@@ -17,7 +15,7 @@ static std::string GetOSNativesUrlName(OS os)
     return {};
 }
 
-static std::string GetOSRuleName(OS os)
+std::string GetOSRuleName(OS os)
 {
     switch (os)
     {
@@ -45,7 +43,7 @@ static std::string GetArchSuffix(OS os, Arch arch)
     return "";
 }
 
-static bool GetRuleAllow(const json& lib, OS os)
+bool GetRuleAllow(const json& lib, OS os)
 {
     if (!lib.contains("rules"))
         return true;
@@ -73,10 +71,11 @@ static bool GetRuleAllow(const json& lib, OS os)
         if (applies)
             allowed = (rule["action"] == "allow");
     }
+
     return allowed;
 }
 
-// - this chooses if the version is modern or not (1.19 +/-)
+// - this chooses if the version is modern or not (1.19 +/-).
 static bool GetVersionAllow(const std::string& versionid)
 {
     int major = 0, minor = 0, patch = 0;
@@ -139,7 +138,7 @@ static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* us
 
     return total;
 }
-// - end helpers
+// - end helpers.
 
 std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std::string& filename, const std::string& folder)
 {
@@ -187,7 +186,7 @@ std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std:
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-    // security
+    // - security.
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
@@ -206,6 +205,9 @@ std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std:
 
     return response;
 }
+
+namespace vanilla
+{
 
 std::string DownloadVersionManifest()
 {
@@ -452,6 +454,7 @@ std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloa
     {
         return std::nullopt;
     }
+    return std::nullopt;
 }
 
 std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets, const std::string& versionid)
@@ -741,12 +744,14 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             {"natives_directory", nativesdir.string()},
             {"launcher_name", "mcapi"},
             {"launcher_version", "1.0"},
-            {"user_properties", "{}"}
+            {"user_properties", "{}"},
+            {"clientid", "mcapi"}, 
+            {"auth_xuid", "0"}
         };
         std::vector<std::string> jvmargs;
         std::vector<std::string> gameargs;
 
-        // - lambda helpers
+        // - lambda helpers.
         auto Getquotes = [](const std::string& str) -> std::string 
         {
             if (str.find(' ') != std::string::npos || str.find('"') != std::string::npos)
@@ -770,7 +775,7 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             std::istringstream iss(replaced);
             return {std::istream_iterator<std::string>{iss}, std::istream_iterator<std::string>{}};
         };
-        // - end lambda helpers
+        // - end lambda helpers.
 
         if (j.contains("arguments"))
         {
@@ -830,6 +835,8 @@ std::optional<std::string> DownloadServerJar(const std::string& serverurl, const
 
     std::wstring wurl(serverurl.begin(), serverurl.end());
     return GET(wurl, GETmode::DiskOnly, "server.jar", serverdir.string());
+}
+
 }
 
 }
