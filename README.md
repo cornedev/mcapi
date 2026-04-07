@@ -19,9 +19,9 @@ Download the latest builds at the [builds branch](https://github.com/cornedev/mc
     - Jdk downloading.
     - Full cross-platform support (windows, macos and linux)
     - A gui application using this API
+    - Fabric support.
 ## Planned
 - Official Microsoft account authentication with mojang servers.
-- Fabric support.
 - Server process starting.
 - Skin support.
 
