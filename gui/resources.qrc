@@ -3,5 +3,7 @@
         <file>gfx/mcapi_logo.png</file>
         <file>gfx/mcapi_gui.ico</file>
         <file>gfx/mcapi_gui.png</file>
+        <file>gfx/mcapi_background_launcher.png</file>
+        <file>gfx/mcapi_background_login.png</file>
     </qresource>
 </RCC>

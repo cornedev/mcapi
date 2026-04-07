@@ -6,19 +6,19 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>725</width>
     <height>676</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>400</width>
+    <width>725</width>
     <height>676</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>400</width>
+    <width>725</width>
     <height>676</height>
    </size>
   </property>
@@ -34,31 +34,43 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>400</width>
+     <width>725</width>
      <height>676</height>
     </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>725</width>
+     <height>676</height>
+    </size>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>725</width>
+     <height>676</height>
+    </size>
    </property>
    <property name="currentIndex">
     <number>0</number>
    </property>
    <widget class="QWidget" name="login">
-    <widget class="QPushButton" name="continuebutton">
+    <widget class="QPushButton" name="offlinebutton">
      <property name="geometry">
       <rect>
-       <x>140</x>
-       <y>90</y>
+       <x>495</x>
+       <y>110</y>
        <width>111</width>
        <height>51</height>
       </rect>
      </property>
      <property name="text">
-      <string>continue</string>
+      <string>Play offline</string>
      </property>
     </widget>
     <widget class="QLabel" name="logologin">
      <property name="geometry">
       <rect>
-       <x>131</x>
+       <x>486</x>
        <y>30</y>
        <width>131</width>
        <height>41</height>
@@ -74,23 +86,60 @@
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>155</x>
-       <y>160</y>
-       <width>81</width>
+       <x>515</x>
+       <y>640</y>
+       <width>91</width>
        <height>16</height>
       </rect>
      </property>
      <property name="text">
-      <string>login page WIP</string>
+      <string>login page WIP.</string>
      </property>
     </widget>
+    <widget class="QLabel" name="loginbackground">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>725</width>
+       <height>676</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="resources.qrc">:/gfx/mcapi_background_login.png</pixmap>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="loginmicrosoftbutton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>495</x>
+       <y>180</y>
+       <width>111</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Microsoft login</string>
+     </property>
+    </widget>
+    <zorder>loginbackground</zorder>
+    <zorder>offlinebutton</zorder>
+    <zorder>logologin</zorder>
+    <zorder>label</zorder>
+    <zorder>loginmicrosoftbutton</zorder>
    </widget>
    <widget class="QWidget" name="launcher">
     <widget class="QLabel" name="version">
      <property name="geometry">
       <rect>
-       <x>175</x>
-       <y>150</y>
+       <x>155</x>
+       <y>200</y>
        <width>81</width>
        <height>16</height>
       </rect>
@@ -102,7 +151,7 @@
     <widget class="QLabel" name="username">
      <property name="geometry">
       <rect>
-       <x>167</x>
+       <x>147</x>
        <y>90</y>
        <width>61</width>
        <height>16</height>
@@ -115,7 +164,7 @@
     <widget class="QLineEdit" name="usernameinput">
      <property name="geometry">
       <rect>
-       <x>120</x>
+       <x>100</x>
        <y>110</y>
        <width>151</width>
        <height>24</height>
@@ -128,8 +177,8 @@
     <widget class="QComboBox" name="versionbox">
      <property name="geometry">
       <rect>
-       <x>120</x>
-       <y>170</y>
+       <x>100</x>
+       <y>220</y>
        <width>151</width>
        <height>24</height>
       </rect>
@@ -147,8 +196,8 @@
     <widget class="QLabel" name="os">
      <property name="geometry">
       <rect>
-       <x>187</x>
-       <y>210</y>
+       <x>167</x>
+       <y>260</y>
        <width>81</width>
        <height>16</height>
       </rect>
@@ -160,8 +209,8 @@
     <widget class="QComboBox" name="osbox">
      <property name="geometry">
       <rect>
-       <x>120</x>
-       <y>230</y>
+       <x>100</x>
+       <y>280</y>
        <width>151</width>
        <height>24</height>
       </rect>
@@ -170,8 +219,8 @@
     <widget class="QLabel" name="arch">
      <property name="geometry">
       <rect>
-       <x>183</x>
-       <y>270</y>
+       <x>163</x>
+       <y>320</y>
        <width>81</width>
        <height>16</height>
       </rect>
@@ -183,8 +232,8 @@
     <widget class="QComboBox" name="archbox">
      <property name="geometry">
       <rect>
-       <x>120</x>
-       <y>290</y>
+       <x>100</x>
+       <y>340</y>
        <width>151</width>
        <height>24</height>
       </rect>
@@ -193,8 +242,8 @@
     <widget class="QCheckBox" name="schoolcheckbox">
      <property name="geometry">
       <rect>
-       <x>143</x>
-       <y>340</y>
+       <x>123</x>
+       <y>390</y>
        <width>101</width>
        <height>21</height>
       </rect>
@@ -209,8 +258,8 @@
     <widget class="QPushButton" name="startbutton">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>370</y>
+       <x>80</x>
+       <y>420</y>
        <width>191</width>
        <height>41</height>
       </rect>
@@ -222,8 +271,8 @@
     <widget class="QPushButton" name="stopbutton">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>430</y>
+       <x>80</x>
+       <y>480</y>
        <width>191</width>
        <height>41</height>
       </rect>
@@ -232,33 +281,10 @@
       <string>Stop</string>
      </property>
     </widget>
-    <widget class="QLabel" name="console">
-     <property name="geometry">
-      <rect>
-       <x>174</x>
-       <y>480</y>
-       <width>81</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>Console</string>
-     </property>
-    </widget>
-    <widget class="QPlainTextEdit" name="consolelog">
-     <property name="geometry">
-      <rect>
-       <x>20</x>
-       <y>500</y>
-       <width>361</width>
-       <height>151</height>
-      </rect>
-     </property>
-    </widget>
     <widget class="QLabel" name="logo">
      <property name="geometry">
       <rect>
-       <x>131</x>
+       <x>110</x>
        <y>30</y>
        <width>131</width>
        <height>41</height>
@@ -271,6 +297,83 @@
       <pixmap resource="resources.qrc">:/gfx/mcapi_logo.png</pixmap>
      </property>
     </widget>
+    <widget class="QLabel" name="launcherbackground">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>725</width>
+       <height>676</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="resources.qrc">:/gfx/mcapi_background_launcher.png</pixmap>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="loaderbox">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>160</y>
+       <width>151</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="editable">
+      <bool>false</bool>
+     </property>
+     <property name="currentIndex">
+      <number>-1</number>
+     </property>
+     <property name="sizeAdjustPolicy">
+      <enum>QComboBox::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
+     </property>
+    </widget>
+    <widget class="QLabel" name="loader">
+     <property name="geometry">
+      <rect>
+       <x>156</x>
+       <y>140</y>
+       <width>81</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Loader  </string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="consolebutton">
+     <property name="geometry">
+      <rect>
+       <x>80</x>
+       <y>540</y>
+       <width>191</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Console</string>
+     </property>
+    </widget>
+    <zorder>launcherbackground</zorder>
+    <zorder>version</zorder>
+    <zorder>username</zorder>
+    <zorder>usernameinput</zorder>
+    <zorder>versionbox</zorder>
+    <zorder>os</zorder>
+    <zorder>osbox</zorder>
+    <zorder>arch</zorder>
+    <zorder>archbox</zorder>
+    <zorder>schoolcheckbox</zorder>
+    <zorder>startbutton</zorder>
+    <zorder>stopbutton</zorder>
+    <zorder>logo</zorder>
+    <zorder>loaderbox</zorder>
+    <zorder>loader</zorder>
+    <zorder>consolebutton</zorder>
    </widget>
   </widget>
  </widget>
