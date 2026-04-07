@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>gui</string>
+   <string>mcapi launcher</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resources.qrc">
@@ -51,7 +51,7 @@
     </size>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="login">
     <widget class="QPushButton" name="offlinebutton">
