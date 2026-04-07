@@ -138,10 +138,11 @@ If you ever want to clean or rebuild (for both applications):
 ## Showcase
 
 ### gui launcher
-<img src="gfx/mcapi_gui_showcase.png" alt="mcapi_gui" width="450">
+<img src="gfx/mcapi_gui_showcase.png" alt="mcapi_gui" width="225">
 
 ## License
 All the code is licensed under the [MIT license](LICENSE).
+
 Copyright (c) 2025-2026 cornedev
 
 ## Disclaimer
