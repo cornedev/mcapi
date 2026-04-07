@@ -27,6 +27,7 @@ using json = nlohmann::json;
 
 namespace mcapi
 {
+    inline fs::path datapath = ".mcapi";
     using argsmap = std::unordered_map<std::string, std::string>;
 
     enum class GETmode
@@ -57,26 +58,45 @@ namespace mcapi
     #endif
 
     std::optional<std::string> GET(const std::wstring& url, GETmode mode = GETmode::MemoryOnly, const std::string& filename = "", const std::string& folder = "");
+
+    bool GetRuleAllow(const json& lib, OS os);
+    std::string GetOSRuleName(OS os);
     
-    std::string DownloadVersionManifest();
-    std::optional<std::vector<std::string>> GetVersionsFromManifest(const std::string& manifestjson);
-    std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifestjson, const std::string& versionid);
-    std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const std::string& versionid);
-    std::optional<std::string> GetClientJarDownloadUrl(const std::string& versionjson);
-    std::optional<std::string> DownloadClientJar(const std::string& clienturl, const std::string& versionid);
-    std::optional<std::string> GetAssetIndexJsonDownloadUrl(const std::string& versionjson);
-    std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl, const std::string& versionid);
-    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson, OS os);
-    std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries, const std::string& versionid);
-    std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloadUrl(const std::string& assetindexjson);
-    std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets, const std::string& versionid);
-    std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionid, const std::string& versionjson, OS os, Arch arch);
-    std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives, const std::string& versionid);
-    std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, const std::string& versionid, OS os);
-    std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath, OS os);
-    std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os);
-    std::optional<std::string> GetServerJarDownloadUrl(const std::string& versionjson);
-    std::optional<std::string> DownloadServerJar(const std::string& serverurl, const std::string& versionid);
+    namespace vanilla
+    {
+        std::string DownloadVersionManifest();
+        std::optional<std::vector<std::string>> GetVersionsFromManifest(const std::string& manifestjson);
+        std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifestjson, const std::string& versionid);
+        std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const std::string& versionid);
+        std::optional<std::string> GetClientJarDownloadUrl(const std::string& versionjson);
+        std::optional<std::string> DownloadClientJar(const std::string& clienturl, const std::string& versionid);
+        std::optional<std::string> GetAssetIndexJsonDownloadUrl(const std::string& versionjson);
+        std::optional<std::string> DownloadAssetIndexJson(const std::string& indexurl, const std::string& versionid);
+        std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesDownloadUrl(const std::string& versionjson, OS os);
+        std::optional<std::vector<std::string>> DownloadLibraries(const std::vector<std::pair<std::string, std::string>>& libraries, const std::string& versionid);
+        std::optional<std::vector<std::pair<std::string, std::string>>> GetAssetsDownloadUrl(const std::string& assetindexjson);
+        std::optional<std::vector<std::string>> DownloadAssets(const std::vector<std::pair<std::string, std::string>>& assets, const std::string& versionid);
+        std::optional<std::vector<std::pair<std::string, std::string>>> GetLibrariesNatives(const std::string& versionid, const std::string& versionjson, OS os, Arch arch);
+        std::optional<std::vector<std::string>> DownloadLibrariesNatives(const std::vector<std::pair<std::string, std::string>>& natives, const std::string& versionid);
+        std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vector<std::string>& nativesjars, const std::string& versionid, OS os);
+        std::optional<std::string> GetClassPath(const std::string& versionjson, const std::vector<std::string>& libraries, const std::string& clientjarpath, OS os);
+        std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os);
+        std::optional<std::string> GetServerJarDownloadUrl(const std::string& versionjson);
+        std::optional<std::string> DownloadServerJar(const std::string& serverurl, const std::string& versionid);
+    }
+
+    namespace fabric
+    {
+        std::string DownloadVersionMeta();
+        std::optional<std::vector<std::string>> GetVersionsFromMeta(const std::string& metajson);
+        std::optional<std::string> GetLoaderMetaUrl(const std::string& versionid);
+        std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl);
+        std::optional<std::string> GetLoaderVersion(const std::string& loaderversionjson);
+        std::optional<std::string> GetLoaderJsonDownloadUrl(const std::string& loaderid, const std::string& versionid);
+        std::optional<std::string> DownloadLoaderJson(const std::string& jsonurl, const std::string& loaderid, const std::string& versionid);
+        std::optional<std::string> GetLoaderJson(const std::string& loaderjson, const std::string& loaderid, const std::string& versionid);
+        std::optional<std::vector<std::pair<std::string, std::string>>> GetLoaderLibrariesDownloadUrl(const std::string& mergedjson, OS os);
+    }
 
     std::optional<int> GetJavaVersion(const std::string& versionjson);
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
