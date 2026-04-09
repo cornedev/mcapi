@@ -83,11 +83,11 @@
       <pixmap resource="resources.qrc">:/gfx/mcapi_logo.png</pixmap>
      </property>
     </widget>
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="loginwip">
      <property name="geometry">
       <rect>
        <x>515</x>
-       <y>640</y>
+       <y>620</y>
        <width>91</width>
        <height>16</height>
       </rect>
@@ -128,11 +128,25 @@
       <string>Microsoft login</string>
      </property>
     </widget>
+    <widget class="QLabel" name="copyrightnote">
+     <property name="geometry">
+      <rect>
+       <x>465</x>
+       <y>640</y>
+       <width>181</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Copyright (c) 2025-2026 cornedev</string>
+     </property>
+    </widget>
     <zorder>loginbackground</zorder>
     <zorder>offlinebutton</zorder>
     <zorder>logologin</zorder>
-    <zorder>label</zorder>
+    <zorder>loginwip</zorder>
     <zorder>loginmicrosoftbutton</zorder>
+    <zorder>copyrightnote</zorder>
    </widget>
    <widget class="QWidget" name="launcher">
     <widget class="QLabel" name="version">
@@ -358,6 +372,19 @@
       <string>Console</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="backbutton">
+     <property name="geometry">
+      <rect>
+       <x>100</x>
+       <y>620</y>
+       <width>151</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Back</string>
+     </property>
+    </widget>
     <zorder>launcherbackground</zorder>
     <zorder>version</zorder>
     <zorder>username</zorder>
@@ -374,6 +401,7 @@
     <zorder>loaderbox</zorder>
     <zorder>loader</zorder>
     <zorder>consolebutton</zorder>
+    <zorder>backbutton</zorder>
    </widget>
   </widget>
  </widget>
