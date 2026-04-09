@@ -26,10 +26,16 @@ gui::gui(QWidget *parent)
     // - pages.
     ui->pages->setCurrentIndex(0);
 
-    // - continue button.
+    // - play offline button.
     connect(ui->offlinebutton, &QPushButton::clicked, [this]()
     {
         ui->pages->setCurrentIndex(1);
+    });
+
+    // - back button.
+    connect(ui->backbutton, &QPushButton::clicked, [this]()
+    {
+        ui->pages->setCurrentIndex(0);
     });
 
     // - console button.
@@ -120,61 +126,60 @@ void gui::GetVersions()
     ui->versionbox->blockSignals(true);
     ui->versionbox->clear();
 
-    try
+    std::optional<std::vector<std::string>> versions;
+
+    if (loaderselected == "vanilla")
     {
-        std::optional<std::vector<std::string>> versions;
-
-        if (loaderselected == "vanilla")
+        if (versionsvanilla)
         {
-            if (versionsvanilla)
-            {
-                versions = versionsvanilla;
-            }
-            else
-            {
-                manifest = mcapi::vanilla::DownloadVersionManifest();
-                versions = mcapi::vanilla::GetVersionsFromManifest(manifest);
-                versionsvanilla = versions;
-            }
+            versions = versionsvanilla;
         }
-        else if (loaderselected == "fabric")
+        else
         {
-            if (versionsfabric)
-            {
-                versions = versionsfabric;
-            }
-            else
-            {
-                auto meta = mcapi::fabric::DownloadVersionMeta();
-                versions = mcapi::fabric::GetVersionsFromMeta(meta);
-                versionsfabric = versions;
-            }
+            manifest = mcapi::vanilla::DownloadVersionManifest();
+            versions = mcapi::vanilla::GetVersionsFromManifest(manifest);
+            versionsvanilla = versions;
         }
-
-        if (!versions || versions->empty())
-            qDebug() << "Failed to get versions.";
-
-        for (const auto &v : *versions)
-        {
-            ui->versionbox->addItem(QString::fromStdString(v));
-        }
-
-        versionselected = ui->versionbox->currentText();
     }
-    catch (...)
+    else if (loaderselected == "fabric")
     {
+        if (versionsfabric)
+        {
+            versions = versionsfabric;
+        }
+        else
+        {
+            auto meta = mcapi::fabric::DownloadVersionMeta();
+            versions = mcapi::fabric::GetVersionsFromMeta(meta);
+            versionsfabric = versions;
+        }
+    }
+
+    if (!versions || versions->empty())
+    {
+        qDebug() << "Failed to get versions, using fallback.";
+
         ui->versionbox->clear();
         if (loaderselected == "vanilla")
         {
-            ui->versionbox->addItem("1.21.1");
+            ui->versionbox->addItem("1.21.11");
             ui->versionbox->addItem("1.8.9");
         }
         else if (loaderselected == "fabric")
         {
-            ui->versionbox->addItem("1.20.1");
+            ui->versionbox->addItem("1.21.11");
         }
         versionselected = ui->versionbox->currentText();
     }
+    else
+    {
+        for (const auto &v : *versions)
+        {
+            ui->versionbox->addItem(QString::fromStdString(v));
+        }
+    }
+
+    versionselected = ui->versionbox->currentText();
     ui->versionbox->blockSignals(false);
 }
 
@@ -292,6 +297,66 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
                 " --accessToken 0"
                 " --userProperties {}"
                 " --userType mojang";
+
+            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
+            if (!launched)
+            {
+                qDebug() << "Failed to launch Minecraft. (offline fallback)";
+                return false;
+            }
+            else
+            {
+                qDebug() << "Minecraft launched. (offline fallback)";
+                return true;
+            }
+        }
+        qDebug() << "Minecraft version not supported on offline fallback.";
+        return false;
+    }
+    if (offlinemode && loaderselected == "fabric")
+    {
+        if (versionselected == "1.21.11")
+        {
+            qDebug() << "Launching minecraft with offline fallback.";
+            mcapi::OS osenum = (osselected == "windows") ? mcapi::OS::Windows : (osselected == "linux") ? mcapi::OS::Linux : mcapi::OS::Macos;
+
+            QString exedir = QCoreApplication::applicationDirPath();
+            QString javapath = exedir + "/runtime/1.21.11-fabric-loader-0.19.1/java/bin/" + (osenum == mcapi::OS::Windows ? "java.exe" : "java");
+            QString librariespath = exedir + "/.mcapi/1.21.11-fabric-loader-0.19.1/libraries";
+            QString clientjarpath = exedir + "/.mcapi/versions/1.21.11-fabric-loader-0.19.1/client.jar";
+            QString assetspath = ".mcapi/1.21.11-fabric-loader-0.19.1/assets";
+            QString gamepath = ".mcapi/versions/1.21.11-fabric-loader-0.19.1";
+            QString nativespath = ".mcapi/1.21.11-fabric-loader-0.19.1/natives";
+
+            #ifdef Q_OS_WIN
+            QString sep = ";";
+            #else
+            QString sep = ":";
+            #endif
+
+            QString classpath = GetOfflineClassPath(librariespath) + sep + clientjarpath;
+
+            std::string launchcmd =
+                "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump "
+                "-Xss1M "
+                "-Djava.library.path=" + nativespath.toStdString() + " "
+                "-Djna.tmpdir=" + nativespath.toStdString() + " "
+                "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + nativespath.toStdString() + " "
+                "-Dio.netty.native.workdir=" + nativespath.toStdString() + " "
+                "-Dminecraft.launcher.brand=mcapi "
+                "-Dminecraft.launcher.version=1.0 "
+                "-cp " + classpath.toStdString() +
+                " net.fabricmc.loader.impl.launch.knot.KnotClient"
+                " --username " + username.toStdString() +
+                " --version 1.21.11-fabric-loader-0.19.1"
+                " --gameDir " + gamepath.toStdString() +
+                " --assetsDir " + assetspath.toStdString() +
+                " --assetIndex 29"
+                " --uuid 00000000-0000-0000-0000-000000000000"
+                " --accessToken 0"
+                " --clientId mcapi"
+                " --xuid 0"
+                " --versionType release";
 
             bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
             if (!launched)
