@@ -76,6 +76,7 @@ std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl)
         return std::nullopt;
 
     const fs::path metapath = datapath / "loader_meta.json";
+    const fs::path metadiskpath = datapath;
 
     if (fs::exists(metapath))
     {
@@ -89,7 +90,7 @@ std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl)
     }
 
     std::wstring wurl(metaurl.begin(), metaurl.end());
-    return GET(wurl, GETmode::MemoryAndDisk, "loader_meta.json", metapath.string());
+    return GET(wurl, GETmode::MemoryAndDisk, "loader_meta.json", metadiskpath.string());
 }
 
 std::optional<std::string> GetLoaderVersion(const std::string& loadermetajson)
