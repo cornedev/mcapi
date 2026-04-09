@@ -7,6 +7,8 @@ The goal of this project is to create an easy-use API for downloading all sorts 
 
 Download the latest builds at the [builds branch](https://github.com/cornedev/mcapi/tree/builds).
 
+Note: the builds are broken at the moment. Github actions still needs fixing. Please download the latest release from the releases tab.
+
 ## Features
 - API
     - Version json downloading.
