@@ -6,6 +6,7 @@ console::console(QWidget *parent)
     , ui(new Ui::console)
 {
     ui->setupUi(this);
+    setWindowFlags(Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
 
     // - consolelog box.
     ui->consolelog->setReadOnly(true);
