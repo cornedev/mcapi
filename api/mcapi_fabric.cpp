@@ -78,7 +78,7 @@ std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl)
     const fs::path metapath = datapath / "loader_meta.json";
     const fs::path metadiskpath = datapath;
 
-    if (fs::exists(metapath))
+    if (fs::exists(metapath) && fs::file_size(metapath) > 0)
     {
         std::ifstream file(metapath, std::ios::binary);
         if (!file)
@@ -130,7 +130,7 @@ std::optional<std::string> DownloadLoaderJson(const std::string& jsonurl, const 
     const fs::path jsonpath = versionpath / (versionid + "-fabric-loader-" + loaderid);
     const fs::path jsondiskpath = versionpath / (versionid + "-fabric-loader-" + loaderid) / (versionid + "-fabric-loader-" + loaderid + "json");
 
-    if (fs::exists(jsondiskpath))
+    if (fs::exists(jsondiskpath) && fs::file_size(jsondiskpath) > 0)
     {
         std::ifstream file(jsondiskpath, std::ios::binary);
         if (!file)
