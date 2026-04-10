@@ -211,7 +211,20 @@ namespace vanilla
 
 std::string DownloadVersionManifest()
 {
-    const fs::path manifestpath = datapath;
+    const fs::path manifestpath = datapath / "version_manifest.json";
+    const fs::path manifestdiskpath = datapath;
+
+    if (fs::exists(manifestpath) && fs::file_size(manifestpath) > 0)
+    {
+        std::ifstream file(manifestpath, std::ios::binary);
+        if (!file)
+            return std::nullopt;
+
+        std::ostringstream buffer;
+        buffer << file.rdbuf();
+        return buffer.str();
+    }
+
     return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk, "", manifestpath.string()).value_or("");
 }
 
@@ -265,7 +278,7 @@ std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const
     const fs::path versionpath = datapath / "versions" / versionid;
     const fs::path jsonpath = versionpath / (versionid + ".json");
 
-    if (fs::exists(jsonpath))
+    if (fs::exists(jsonpath) && fs::file_size(jsonpath) > 0)
     {
         std::ifstream file(jsonpath, std::ios::binary);
         if (!file)
