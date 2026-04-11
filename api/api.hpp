@@ -64,7 +64,7 @@ namespace mcapi
     
     namespace vanilla
     {
-        std::string DownloadVersionManifest();
+        std::optional<std::string> DownloadVersionManifest();
         std::optional<std::vector<std::string>> GetVersionsFromManifest(const std::string& manifestjson);
         std::optional<std::string> GetVersionJsonDownloadUrl(const std::string& manifestjson, const std::string& versionid);
         std::optional<std::string> DownloadVersionJson(const std::string& jsonurl, const std::string& versionid);
@@ -87,7 +87,7 @@ namespace mcapi
 
     namespace fabric
     {
-        std::string DownloadVersionMeta();
+        std::optional<std::string> DownloadVersionMeta();
         std::optional<std::vector<std::string>> GetVersionsFromMeta(const std::string& metajson);
         std::optional<std::string> GetLoaderMetaUrl(const std::string& versionid);
         std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl);
