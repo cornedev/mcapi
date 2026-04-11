@@ -136,8 +136,8 @@ void gui::GetVersions()
         }
         else
         {
-            manifest = mcapi::vanilla::DownloadVersionManifest();
-            versions = mcapi::vanilla::GetVersionsFromManifest(manifest);
+            auto manifest = mcapi::vanilla::DownloadVersionManifest();
+            versions = mcapi::vanilla::GetVersionsFromManifest(*manifest);
             versionsvanilla = versions;
         }
     }
@@ -150,7 +150,7 @@ void gui::GetVersions()
         else
         {
             auto meta = mcapi::fabric::DownloadVersionMeta();
-            versions = mcapi::fabric::GetVersionsFromMeta(meta);
+            versions = mcapi::fabric::GetVersionsFromMeta(*meta);
             versionsfabric = versions;
         }
     }
@@ -183,198 +183,8 @@ void gui::GetVersions()
     ui->versionbox->blockSignals(false);
 }
 
-static QString GetOfflineClassPath(const QString& basepath)
-{
-    QStringList jars;
-    QDirIterator iterator(basepath, QStringList() << "*.jar", QDir::Files, QDirIterator::Subdirectories);
-
-    while (iterator.hasNext())
-    {
-        jars << iterator.next();
-    }
-
-    #ifdef Q_OS_WIN
-    return jars.join(";");
-    #else
-    return jars.join(":");
-    #endif
-}
-
 bool gui::StartVersion(const QString &username, const QString &loaderselected, const QString &versionselected, const QString &archselected, const QString &osselected)
 {
-    bool offlinemode = ui->schoolcheckbox->isChecked();
-
-    // - offline fallbacks.
-    if (offlinemode && loaderselected == "vanilla")
-    {
-        if (versionselected == "1.21.11")
-        {
-            qDebug() << "Launching minecraft with offline fallback.";
-            mcapi::OS osenum = (osselected == "windows") ? mcapi::OS::Windows : (osselected == "linux") ? mcapi::OS::Linux : mcapi::OS::Macos;
-
-            QString exedir = QCoreApplication::applicationDirPath();
-            QString javapath = exedir + "/runtime/1.21.11/java/bin/" + (osenum == mcapi::OS::Windows ? "java.exe" : "java");
-            QString librariespath = exedir + "/.mcapi/1.21.11/libraries";
-            QString clientjarpath = exedir + "/.mcapi/versions/1.21.11/client.jar";
-            QString assetspath = ".mcapi/1.21.11/assets";
-            QString gamepath = ".mcapi/versions/1.21.11";
-            QString nativespath = ".mcapi/1.21.11/natives";
-
-            #ifdef Q_OS_WIN
-            QString sep = ";";
-            #else
-            QString sep = ":";
-            #endif
-
-            QString classpath = GetOfflineClassPath(librariespath) + sep + clientjarpath;
-
-            std::string launchcmd =
-                "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump "
-                "-Xss1M "
-                "-Djava.library.path=" + nativespath.toStdString() + " "
-                "-Djna.tmpdir=" + nativespath.toStdString() + " "
-                "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + nativespath.toStdString() + " "
-                "-Dio.netty.native.workdir=" + nativespath.toStdString() + " "
-                "-Dminecraft.launcher.brand=mcapi "
-                "-Dminecraft.launcher.version=1.0 "
-                "-cp " + classpath.toStdString() +
-                " net.minecraft.client.main.Main"
-                " --username " + username.toStdString() +
-                " --version 1.21.11"
-                " --gameDir " + gamepath.toStdString() +
-                " --assetsDir " + assetspath.toStdString() +
-                " --assetIndex 29"
-                " --uuid 00000000-0000-0000-0000-000000000000"
-                " --accessToken 0"
-                " --versionType release";
-
-            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
-            if (!launched)
-            {
-                qDebug() << "Failed to launch Minecraft. (offline fallback)";
-                return false;
-            }
-            else
-            {
-                qDebug() << "Minecraft launched. (offline fallback)";
-                return true;
-            }
-        }
-
-        if (versionselected == "1.8.9")
-        {
-            qDebug() << "Launching minecraft with offline fallback.";
-            mcapi::OS osenum = (osselected == "windows") ? mcapi::OS::Windows : (osselected == "linux") ? mcapi::OS::Linux : mcapi::OS::Macos;
-
-            QString exedir = QCoreApplication::applicationDirPath();
-            QString javapath = exedir + "/runtime/1.8.9/java/bin/" + (osenum == mcapi::OS::Windows ? "java.exe" : "java");
-            QString librariespath = exedir + "/.mcapi/1.8.9/libraries";
-            QString clientjarpath = exedir + "/.mcapi/versions/1.8.9/client.jar";
-            QString assetspath = ".mcapi/1.8.9/assets";
-            QString gamepath = ".mcapi/versions/1.8.9";
-            QString nativespath = ".mcapi/1.8.9/natives";
-
-            #ifdef Q_OS_WIN
-            QString sep = ";";
-            #else
-            QString sep = ":";
-            #endif
-
-            QString classpath = GetOfflineClassPath(librariespath) + sep + clientjarpath;
-
-            std::string launchcmd =
-                "-Xmx2G "
-                "-Xms1G "
-                "-Djava.library.path=" + nativespath.toStdString() + " "
-                "-cp " + classpath.toStdString() +
-                " net.minecraft.client.main.Main"
-                " --username " + username.toStdString() +
-                " --version 1.8.9"
-                " --gameDir " + gamepath.toStdString() +
-                " --assetsDir " + assetspath.toStdString() +
-                " --assetIndex 1.8"
-                " --uuid 00000000-0000-0000-0000-000000000000"
-                " --accessToken 0"
-                " --userProperties {}"
-                " --userType mojang";
-
-            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
-            if (!launched)
-            {
-                qDebug() << "Failed to launch Minecraft. (offline fallback)";
-                return false;
-            }
-            else
-            {
-                qDebug() << "Minecraft launched. (offline fallback)";
-                return true;
-            }
-        }
-        qDebug() << "Minecraft version not supported on offline fallback.";
-        return false;
-    }
-    if (offlinemode && loaderselected == "fabric")
-    {
-        if (versionselected == "1.21.11")
-        {
-            qDebug() << "Launching minecraft with offline fallback.";
-            mcapi::OS osenum = (osselected == "windows") ? mcapi::OS::Windows : (osselected == "linux") ? mcapi::OS::Linux : mcapi::OS::Macos;
-
-            QString exedir = QCoreApplication::applicationDirPath();
-            QString javapath = exedir + "/runtime/1.21.11-fabric-loader-0.19.1/java/bin/" + (osenum == mcapi::OS::Windows ? "java.exe" : "java");
-            QString librariespath = exedir + "/.mcapi/1.21.11-fabric-loader-0.19.1/libraries";
-            QString clientjarpath = exedir + "/.mcapi/versions/1.21.11-fabric-loader-0.19.1/client.jar";
-            QString assetspath = ".mcapi/1.21.11-fabric-loader-0.19.1/assets";
-            QString gamepath = ".mcapi/versions/1.21.11-fabric-loader-0.19.1";
-            QString nativespath = ".mcapi/1.21.11-fabric-loader-0.19.1/natives";
-
-            #ifdef Q_OS_WIN
-            QString sep = ";";
-            #else
-            QString sep = ":";
-            #endif
-
-            QString classpath = GetOfflineClassPath(librariespath) + sep + clientjarpath;
-
-            std::string launchcmd =
-                "-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump "
-                "-Xss1M "
-                "-Djava.library.path=" + nativespath.toStdString() + " "
-                "-Djna.tmpdir=" + nativespath.toStdString() + " "
-                "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + nativespath.toStdString() + " "
-                "-Dio.netty.native.workdir=" + nativespath.toStdString() + " "
-                "-Dminecraft.launcher.brand=mcapi "
-                "-Dminecraft.launcher.version=1.0 "
-                "-cp " + classpath.toStdString() +
-                " net.fabricmc.loader.impl.launch.knot.KnotClient"
-                " --username " + username.toStdString() +
-                " --version 1.21.11-fabric-loader-0.19.1"
-                " --gameDir " + gamepath.toStdString() +
-                " --assetsDir " + assetspath.toStdString() +
-                " --assetIndex 29"
-                " --uuid 00000000-0000-0000-0000-000000000000"
-                " --accessToken 0"
-                " --clientId mcapi"
-                " --xuid 0"
-                " --versionType release";
-
-            bool launched = mcapi::StartProcess(javapath.toStdString(), launchcmd, osenum, &process, true);
-            if (!launched)
-            {
-                qDebug() << "Failed to launch Minecraft. (offline fallback)";
-                return false;
-            }
-            else
-            {
-                qDebug() << "Minecraft launched. (offline fallback)";
-                return true;
-            }
-        }
-        qDebug() << "Minecraft version not supported on offline fallback.";
-        return false;
-    }
-    // - end offline fallbacks.
-
     if (loaderselected == "vanilla")
     {
         // - download version json.
@@ -390,7 +200,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         auto versionjsonopt = mcapi::vanilla::DownloadVersionJson(versionurl, versionselected.toStdString());
         if (!versionjsonopt)
         {
-            qDebug() << "Failed to download version json.";
+            qDebug() << "Failed to download version json (are you offline?).";
             return false;
         }
         qDebug() << "Version json downloaded.";
@@ -602,7 +412,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         auto loadermetaurlopt = mcapi::fabric::GetLoaderMetaUrl(versionselected.toStdString());
         if (!loadermetaurlopt)
         {
-            qDebug() << "Failed to get loader meta url.";
+            qDebug() << "Failed to get loader meta url (are you offline?).";
             return false;
         }
         auto loadermetaurl = *loadermetaurlopt;
@@ -645,6 +455,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
             return false;
         }
         auto loaderjson = *loaderjsonopt;
+        qDebug() << "Version json downloaded.";
 
         // - merge vanilla json with fabric json.
         auto mergedjsonopt = mcapi::fabric::GetLoaderJson(loaderjson, loader, versionselected.toStdString());
