@@ -34,9 +34,22 @@ json GetMergedJson(json parent, json child)
     return parent;
 }
 
-std::string DownloadVersionMeta()
+std::optional<std::string> DownloadVersionMeta()
 {
     const fs::path metapath = datapath;
+    const fs::path metadiskpath = datapath / "version_meta.json";
+
+    if (fs::exists(metadiskpath) && fs::file_size(metadiskpath) > 0)
+    {
+        std::ifstream file(metadiskpath, std::ios::binary);
+        if (!file)
+            return std::nullopt;
+
+        std::ostringstream buffer;
+        buffer << file.rdbuf();
+        return buffer.str();
+    }
+
     return GET(L"https://meta.fabricmc.net/v2/versions/game", GETmode::MemoryAndDisk, "version_meta.json", metapath.string()).value_or("");
 }
 
@@ -78,7 +91,7 @@ std::optional<std::string> DownloadLoaderMeta(const std::string& metaurl)
     const fs::path metapath = datapath / "loader_meta.json";
     const fs::path metadiskpath = datapath;
 
-    if (fs::exists(metapath))
+    if (fs::exists(metapath) && fs::file_size(metapath) > 0)
     {
         std::ifstream file(metapath, std::ios::binary);
         if (!file)
@@ -128,9 +141,9 @@ std::optional<std::string> DownloadLoaderJson(const std::string& jsonurl, const 
 
     const fs::path versionpath = datapath / "versions";
     const fs::path jsonpath = versionpath / (versionid + "-fabric-loader-" + loaderid);
-    const fs::path jsondiskpath = versionpath / (versionid + "-fabric-loader-" + loaderid) / (versionid + "-fabric-loader-" + loaderid + "json");
+    const fs::path jsondiskpath = versionpath / (versionid + "-fabric-loader-" + loaderid) / (versionid + "-fabric-loader-" + loaderid + ".json");
 
-    if (fs::exists(jsondiskpath))
+    if (fs::exists(jsondiskpath) && fs::file_size(jsondiskpath) > 0)
     {
         std::ifstream file(jsondiskpath, std::ios::binary);
         if (!file)
@@ -149,6 +162,18 @@ std::optional<std::string> GetLoaderJson(const std::string& loaderjson, const st
 {
     try
     {
+        const std::string diskpath = ".mcapi/versions/" + versionid + "-fabric-loader-" + loaderid + "/" + versionid + "-fabric-loader-" + loaderid + ".json";
+        if (fs::exists(diskpath) && fs::file_size(diskpath) > 0)
+        {
+            std::ifstream file(diskpath, std::ios::binary);
+            if (!file)
+                return std::nullopt;
+
+            std::ostringstream buffer;
+            buffer << file.rdbuf();
+            return buffer.str();
+        }
+
         auto j = json::parse(loaderjson);
         if (!j.contains("inheritsFrom"))
             return j.dump();
@@ -156,44 +181,26 @@ std::optional<std::string> GetLoaderJson(const std::string& loaderjson, const st
         std::string parentid = j["inheritsFrom"];
 
         auto manifest = mcapi::vanilla::DownloadVersionManifest();
-        if (manifest.empty())
+        if (!manifest)
         {
             return std::nullopt;
         }
 
-        auto parenturl = mcapi::vanilla::GetVersionJsonDownloadUrl(manifest, parentid);
+        auto parenturl = mcapi::vanilla::GetVersionJsonDownloadUrl(*manifest, parentid);
         if (!parenturl)
         {
             return std::nullopt;
         }
 
-        std::string parentjsonid = versionid + "-vanilla-loader";
+        std::string parentjsonid = versionid + "-fabric-loader-vanilla-" + loaderid;
         auto parentjson = mcapi::vanilla::DownloadVersionJson(parenturl.value(), parentjsonid);
         if (!parentjson)
         {
             return std::nullopt;
         }
-
         json parent = json::parse(parentjson.value());
         json loaderjson = GetMergedJson(parent, j);
         std::string diskjson = loaderjson.dump(4);
-
-        const fs::path vanillajsonpath = datapath / "versions" / (versionid + "-vanilla-loader")  / (versionid + "-vanilla-loader.json");
-        const std::string diskpath = ".mcapi/versions/" + versionid + "-fabric-loader-" + loaderid + "/" + versionid + "-fabric-loader-" + loaderid + ".json";
-        if (!diskpath.empty()) 
-        {
-            std::ofstream out(diskpath, std::ios::trunc);
-            if (out.is_open()) 
-            {
-                out << diskjson;
-                out.close();
-            }
-        }
-        if (fs::exists(vanillajsonpath)) 
-        {
-            const fs::path vanillajsonfolderpath = datapath / "versions" / (versionid + "-vanilla-loader");
-            fs::remove_all(vanillajsonfolderpath);
-        }
         return diskjson;
     }
     catch (...)

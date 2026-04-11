@@ -253,22 +253,6 @@
       </rect>
      </property>
     </widget>
-    <widget class="QCheckBox" name="schoolcheckbox">
-     <property name="geometry">
-      <rect>
-       <x>123</x>
-       <y>390</y>
-       <width>101</width>
-       <height>21</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>School fallback</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
     <widget class="QPushButton" name="startbutton">
      <property name="geometry">
       <rect>
@@ -394,7 +378,6 @@
     <zorder>osbox</zorder>
     <zorder>arch</zorder>
     <zorder>archbox</zorder>
-    <zorder>schoolcheckbox</zorder>
     <zorder>startbutton</zorder>
     <zorder>stopbutton</zorder>
     <zorder>logo</zorder>
