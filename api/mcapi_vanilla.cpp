@@ -209,7 +209,7 @@ std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std:
 namespace vanilla
 {
 
-std::string DownloadVersionManifest()
+std::optional<std::string> DownloadVersionManifest()
 {
     const fs::path manifestpath = datapath / "version_manifest.json";
     const fs::path manifestdiskpath = datapath;
@@ -225,7 +225,7 @@ std::string DownloadVersionManifest()
         return buffer.str();
     }
 
-    return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk, "", manifestpath.string()).value_or("");
+    return GET(L"https://launchermeta.mojang.com/mc/game/version_manifest.json", GETmode::MemoryAndDisk, "", manifestdiskpath.string()).value_or("");
 }
 
 std::optional<std::vector<std::string>> GetVersionsFromManifest(const std::string& manifestjson)
