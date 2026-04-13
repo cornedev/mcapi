@@ -187,6 +187,15 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
 {
     if (loaderselected == "vanilla")
     {
+        // - download manifest.
+        auto manifestopt = mcapi::vanilla::DownloadVersionManifest();
+        if (!manifestopt)
+        {
+            qDebug() << "Failed to download manifest.";
+            return false;
+        }
+        auto manifest = *manifestopt;
+        
         // - download version json.
         auto versionjsonurl = mcapi::vanilla::GetVersionJsonDownloadUrl(manifest, versionselected.toStdString());
         if (!versionjsonurl)
