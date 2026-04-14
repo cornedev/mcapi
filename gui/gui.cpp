@@ -42,7 +42,8 @@ gui::gui(QWidget *parent)
     connect(ui->consolebutton, &QPushButton::clicked, [this]()
     {
         if (!consolewindow) {
-            consolewindow = new console();
+            consolewindow = new console(this);
+            consolewindow->setWindowFlags(Qt::Window);
             connect(consolewindow, &QObject::destroyed, [this]()
             {
                 consolewindow = nullptr;
