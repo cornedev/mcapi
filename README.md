@@ -11,17 +11,12 @@ Note: the builds are broken at the moment. Github actions still needs fixing. Pl
 
 ## Features
 - API
-    - Version json downloading.
-    - Client jar downloading.
-    - Assets downloading.
-    - Server jar downloading.
-    - Libraries downloading.
-    - Natives extracting.
-    - Starting a offline Minecraft process.
-    - Jdk downloading.
-    - Full cross-platform support (windows, macos and linux)
-    - A gui application using this API
-    - Fabric support.
+    - Full [vanilla](https://github.com/cornedev/mcapi/blob/main/api/mcapi_vanilla.cpp) downloading support (all assets & launching needs).
+    - Full [fabric](https://github.com/cornedev/mcapi/blob/main/api/mcapi_fabric.cpp) downloading support.
+    - [Minecraft starting](https://github.com/cornedev/mcapi/blob/main/api/mcapi_process.cpp) support.
+    - [Java downloading](https://github.com/cornedev/mcapi/blob/main/api/mcapi_java.cpp) support using the adoptium API.
+    - Full cross-platform support (windows, macos and linux).
+    - A [gui implementation showcase launcher](https://github.com/cornedev/mcapi/tree/main/gui) using this API (showcase image at the bottom of this readme).
 ## Planned
 - Official Microsoft account authentication with mojang servers.
 - Server process starting.
@@ -59,6 +54,7 @@ That's it. The executable will be in `/build/` and all dependencies will be auto
 1. Get the following dependencies on your system:
    - [nlohmann/json](https://github.com/nlohmann/json)
    - [libarchive](https://github.com/libarchive/libarchive)
+   - [cmake](https://github.com/Kitware/CMake)
 
 2. Clone this repository:
    ```sh
