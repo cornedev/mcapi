@@ -98,6 +98,11 @@ namespace mcapi
         std::optional<std::vector<std::pair<std::string, std::string>>> GetLoaderLibrariesDownloadUrl(const std::string& mergedjson, OS os);
     }
 
+    namespace auth
+    {
+        std::optional<std::string> GetMicrosoftLoginUrl();
+    }
+
     std::optional<int> GetJavaVersion(const std::string& versionjson);
     std::optional<std::string> GetJavaDownloadUrl(int javaversion, OS os, Arch arch);
     std::optional<std::string> DownloadJava(const std::string& javaurl, const std::string& versionid);
