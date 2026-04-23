@@ -15,10 +15,10 @@ Note: the builds are broken at the moment. Github actions still needs fixing. Pl
     - Full [fabric](https://github.com/cornedev/mcapi/blob/main/api/mcapi_fabric.cpp) downloading support.
     - [Minecraft starting](https://github.com/cornedev/mcapi/blob/main/api/mcapi_process.cpp) support.
     - [Java downloading](https://github.com/cornedev/mcapi/blob/main/api/mcapi_java.cpp) support using the adoptium API.
+    - Official [Microsoft account authentication](https://github.com/cornedev/mcapi/blob/main/api/mcapi_auth.cpp) with mojang servers.
     - Full cross-platform support (windows, macos and linux).
     - A [gui implementation showcase launcher](https://github.com/cornedev/mcapi/tree/main/gui) using this API (showcase image at the bottom of this readme).
 ## Planned
-- Official Microsoft account authentication with mojang servers.
 - Server process starting.
 - Skin support.
 
