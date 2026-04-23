@@ -86,14 +86,16 @@ if(WIN32)
     )
 endif()
 
-file(GLOB PLATFORMS "${GFX_DIR}/*.html")
-add_custom_command(TARGET mcapi_gui POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            $<TARGET_FILE_DIR:mcapi_gui>/gfx
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            ${PLATFORMS}
-            $<TARGET_FILE_DIR:mcapi_gui>/gfx
-)
+file(GLOB GFX_FILES CONFIGURE_DEPENDS "${GFX_DIR}/*.html")
+if(GFX_FILES)
+    add_custom_command(TARGET mcapi_gui POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "$<TARGET_FILE_DIR:mcapi_gui>/gfx"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${GFX_FILES}
+                "$<TARGET_FILE_DIR:mcapi_gui>/gfx"
+    )
+endif()
 
 if(WIN32)
     file(GLOB RUNTIME_DLLS "${RUNTIME_BIN_DIR}/*.dll")
