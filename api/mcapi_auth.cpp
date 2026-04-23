@@ -30,7 +30,7 @@ std::optional<std::string> GetMicrosoftLoginUrl()
 {
     const std::string clientid = "3801bb4f-aa98-4355-96a8-8e52ebe042bf";
 
-    return "https://login.live.com/oauth20_authorize.srf?client_id=" + clientid + "&response_type=code&redirect_uri=http://127.0.0.1:8080/&scope=XboxLive.signin%20offline_access";
+    return "https://login.live.com/oauth20_authorize.srf?client_id=" + clientid + "&response_type=code&redirect_uri=http://127.0.0.1:8080/&scope=XboxLive.signin%20offline_access&prompt=select_account";
 }
 
 std::optional<std::string> StartMicrosoftLoginListener(const std::string& url)
@@ -129,12 +129,24 @@ std::optional<std::string> StartMicrosoftLoginListener(const std::string& url)
         code = GetCodeFromUrl(request);
 
         // - browser response.
-        const char* response = "HTTP/1.1 200 OK\r\n" "Content-Type: text/html\r\n\r\n" "<html><body>Redirected. The window can be safely closed.</body></html>";
+        std::string redirect;
+        std::ifstream file(".mcapi/mcapi_redirect.html", std::ios::binary);
+        if (file)
+        {
+            std::ostringstream redirectbuffer;
+            redirectbuffer << file.rdbuf();
+            redirect = redirectbuffer.str();
+        }
+        else
+        {
+            redirect = "<html><body>Redirect file missing.</body></html>";
+        }
+        std::string response = "HTTP/1.1 200 OK\r\n" "Content-Type: text/html\r\n" "Content-Length: " + std::to_string(redirect.size()) + "\r\n" "\r\n" + redirect;
         #ifdef _WIN32
-        send(client, response, strlen(response), 0);
+        send(client, response.c_str(), response.size(), 0);
         closesocket(client);
         #else
-        write(client, response, strlen(response));
+        write(client, response.c_str(), response.size());
         close(client);
         #endif
 
@@ -195,15 +207,15 @@ std::optional<std::string> GetAccessTokenJson(const std::string& code)
     if (!curl)
         return std::nullopt;
 
-    char* encodedcode = curl_easy_escape(curl, code.c_str(), code.length());
-    if (!encodedcode)
+    char* encoded = curl_easy_escape(curl, code.c_str(), code.length());
+    if (!encoded)
     {
         curl_easy_cleanup(curl);
         return std::nullopt;
     }
-    std::string body ="client_id=" + clientid + "&code=" + std::string(encodedcode) + "&grant_type=authorization_code" + "&redirect_uri=http://127.0.0.1:8080/";
+    std::string body ="client_id=" + clientid + "&code=" + std::string(encoded) + "&grant_type=authorization_code" + "&redirect_uri=http://127.0.0.1:8080/";
 
-    curl_free(encodedcode);
+    curl_free(encoded);
     curl_easy_cleanup(curl);
 
     return POST(L"https://login.live.com/oauth20_token.srf", body, {"Content-Type: application/x-www-form-urlencoded"});
@@ -237,12 +249,57 @@ std::optional<std::string> GetRefreshTokenFromJson(const std::string& tokenjson)
         {
             return std::nullopt;
         }
-        return j["refresh_token"].get<std::string>();
+        std::string token = j["refresh_token"].get<std::string>();
+
+        const fs::path refreshtoken = datapath / "refresh_token";
+        std::ofstream file(refreshtoken, std::ios::trunc);
+        if (file)
+            file << token;
+        
+        return token;
     }
     catch (...)
     {
         return std::nullopt;
     }
+}
+
+std::optional<std::string> GetAccessTokenFromRefreshToken()
+{
+    const fs::path refreshtoken = datapath / "refresh_token";
+    std::ifstream file(refreshtoken);
+    if (!file)
+        return std::nullopt;
+
+    std::string token;
+    std::getline(file, token);
+
+    if (token.empty())
+        return std::nullopt;
+
+    const std::string clientid = "3801bb4f-aa98-4355-96a8-8e52ebe042bf";
+
+    CURL* curl = curl_easy_init();
+    if (!curl)
+        return std::nullopt;
+
+    char* encoded = curl_easy_escape(curl, token.c_str(),static_cast<int>(token.size()));
+    if (!encoded)
+    {
+        curl_easy_cleanup(curl);
+        return std::nullopt;
+    }
+    std::string body = "client_id=" + clientid + "&refresh_token=" + std::string(encoded) + "&grant_type=refresh_token" + "&redirect_uri=http://127.0.0.1:8080/";
+
+    curl_free(encoded);
+    curl_easy_cleanup(curl);
+
+    auto json = POST(L"https://login.live.com/oauth20_token.srf", body, {"Content-Type: application/x-www-form-urlencoded"});
+    if (!json)
+        return std::nullopt;
+
+    GetRefreshTokenFromJson(*json);
+    return GetAccessTokenFromJson(*json);
 }
 
 std::optional<std::string> GetXboxTokenJson(const std::string& accesstoken)
