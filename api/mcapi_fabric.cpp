@@ -171,7 +171,18 @@ std::optional<std::string> GetLoaderJson(const std::string& loaderjson, const st
 
             std::ostringstream buffer;
             buffer << file.rdbuf();
-            return buffer.str();
+            std::string mergedjson = buffer.str();
+
+            try
+            {
+                auto j = json::parse(mergedjson);
+                if (!j.contains("inheritsFrom"))
+                    return mergedjson;
+            }
+            catch (...)
+            {
+                return std::nullopt;
+            }
         }
 
         auto j = json::parse(loaderjson);

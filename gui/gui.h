@@ -7,6 +7,7 @@
 #include <QString>
 #include <QtConcurrent>
 #include <QThread>
+#include <QMessageBox>
 
 #include "../api/api.hpp"
 
@@ -28,14 +29,16 @@ public:
     console* consolewindow = nullptr;
 
 private slots:
-    void on_startbutton_clicked();
     void on_loadercombo_changed(const QString &loader);
     void on_versioncombo_changed(const QString &version);
     void on_oscombo_changed(const QString &os);
     void on_archcombo_changed(const QString &os);
     void on_usernameinput_changed(const QString &input);
 
+    void on_startbutton_clicked();
     void on_stopbutton_clicked();
+    void on_loginmicrosoftbutton_clicked();
+    void on_logincancelbutton_clicked();
 
 private:
     Ui::gui *ui;
@@ -44,7 +47,8 @@ private:
     std::optional<std::vector<std::string>> versionsfabric;
 
     std::string manifest;
-    std::atomic<bool> running{false};
+    std::atomic<bool> processrunning{false};
+    std::atomic<bool> loginrunning{false};
 
     QString loaderselected;
     QString versionselected;
@@ -53,7 +57,14 @@ private:
 
     QString username;
 
+    bool microsoftlogin = false;
+    bool microsoft = false;
+    std::string microsoftusername;
+    std::string microsoftuuid;
+    std::string microsoftaccesstoken;
+
     void GetVersions();
     bool StartVersion(const QString &username, const QString &loaderselected, const QString &versionselected, const QString &archselected, const QString &osselected);
+    bool StartMicrosoftLogin();
 };
 #endif // GUI_H

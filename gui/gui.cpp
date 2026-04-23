@@ -23,6 +23,9 @@ gui::gui(QWidget *parent)
     instance = this;
     qInstallMessageHandler(ConsoleHandler);
 
+    // - cancel login button.
+    ui->logincancelbutton->hide();
+
     // - pages.
     ui->pages->setCurrentIndex(0);
 
@@ -36,6 +39,8 @@ gui::gui(QWidget *parent)
     connect(ui->backbutton, &QPushButton::clicked, [this]()
     {
         ui->pages->setCurrentIndex(0);
+        ui->usernameinput->setText("");
+        ui->usernameinput->setEnabled(true);
     });
 
     // - console button.
@@ -91,6 +96,7 @@ gui::gui(QWidget *parent)
 
 gui::~gui()
 {
+    mcapi::auth::StopMicrosoftLoginListener();
     qInstallMessageHandler(0);
     instance = nullptr;
     delete ui;
@@ -377,16 +383,32 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         auto classpath = *classpathopt;
         qDebug() << "Classpath built.";
 
-        // - build launch command.
-        qDebug() << "Building launch command...";
-        auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, versionjson, versionselected.toStdString(), osenum);
-        if (!launchcmdopt)
+        // - build launch command depending on whether the user is offline or logged in.
+        std::string launchcmd;
+        if (microsoft)
         {
-            qDebug() << "Failed to build launch command.";
-            return false;
+            qDebug() << "Building launch command...";
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(microsoftusername, classpath, versionjson, versionselected.toStdString(), osenum, microsoftuuid, microsoftaccesstoken, "msa");
+            if (!launchcmdopt)
+            {
+                qDebug() << "Failed to build launch command.";
+                return false;
+            }
+            launchcmd = *launchcmdopt;
+            qDebug() << "Launch command built.";
         }
-        auto launchcmd = *launchcmdopt;
-        qDebug() << "Launch command built.";
+        else
+        {
+            qDebug() << "Building launch command...";
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, versionjson, versionselected.toStdString(), osenum);
+            if (!launchcmdopt)
+            {
+                qDebug() << "Failed to build launch command.";
+                return false;
+            }
+            launchcmd = *launchcmdopt;
+            qDebug() << "Launch command built.";
+        }
 
         // - launch minecraft.
         std::string javapath;
@@ -404,12 +426,12 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process, true);
         if (!launched)
         {
-            qDebug() << "Failed to launch Minecraft.";
+            QMetaObject::invokeMethod(this, [this](){QMessageBox::critical(this, "error", "Failed to launch minecraft.");}, Qt::QueuedConnection);
             return false;
         }
         else
         {
-            qDebug() << "Minecraft launched.";
+            QMetaObject::invokeMethod(this, [this](){QMessageBox::information(this, "info", "Minecraft launched.");}, Qt::QueuedConnection);
             return true;
         }
     }
@@ -637,16 +659,32 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         auto classpath = *classpathopt;
         qDebug() << "Classpath built.";
 
-        // - build launch command.
-        qDebug() << "Building launch command...";
-        auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, mergedjson, versionid.toStdString(), osenum);
-        if (!launchcmdopt)
+        // - build launch command depending on whether the user is offline or logged in.
+        std::string launchcmd;
+        if (microsoft)
         {
-            qDebug() << "Failed to build launch command.";
-            return false;
+            qDebug() << "Building launch command...";
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(microsoftusername, classpath, mergedjson, versionselected.toStdString(), osenum, microsoftuuid, microsoftaccesstoken, "msa");
+            if (!launchcmdopt)
+            {
+                qDebug() << "Failed to build launch command.";
+                return false;
+            }
+            launchcmd = *launchcmdopt;
+            qDebug() << "Launch command built.";
         }
-        auto launchcmd = *launchcmdopt;
-        qDebug() << "Launch command built.";
+        else
+        {
+            qDebug() << "Building launch command...";
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, mergedjson, versionselected.toStdString(), osenum);
+            if (!launchcmdopt)
+            {
+                qDebug() << "Failed to build launch command.";
+                return false;
+            }
+            launchcmd = *launchcmdopt;
+            qDebug() << "Launch command built.";
+        }
 
         // - launch minecraft.
         std::string javapath;
@@ -664,12 +702,12 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         bool launched = mcapi::StartProcess(javapath, launchcmd, osenum, &process, true);
         if (!launched)
         {
-            qDebug() << "Failed to launch Minecraft.";
+            QMetaObject::invokeMethod(this, [this](){QMessageBox::critical(this, "error", "Failed to launch minecraft.");}, Qt::QueuedConnection);
             return false;
         }
         else
         {
-            qDebug() << "Minecraft launched.";
+            QMetaObject::invokeMethod(this, [this](){QMessageBox::information(this, "info", "Minecraft launched.");}, Qt::QueuedConnection);
             return true;
         }
     }
@@ -678,22 +716,23 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
 
 void gui::on_startbutton_clicked()
 {
-    if (running.exchange(true))
+    if (processrunning.exchange(true))
         return;
 
     if (ui->usernameinput->text().trimmed().isEmpty())
     {
-        qDebug() << "Please enter an username.";
-        running = false;
+        QMetaObject::invokeMethod(this, [this](){QMessageBox::critical(this, "error", "Please enter a username.");}, Qt::QueuedConnection);
+        processrunning = false;
         return;
     }
 
     ui->startbutton->setEnabled(false);
 
-    QFuture<void> future = QtConcurrent::run([this]() {
+    QFuture<void> future = QtConcurrent::run([this]()
+    {
         if (!StartVersion(username, loaderselected, versionselected, archselected, osselected))
         {
-            running = false;
+            processrunning = false;
             QMetaObject::invokeMethod(ui->startbutton, "setEnabled", Qt::QueuedConnection, Q_ARG(bool, true));
             return;
         }
@@ -701,7 +740,7 @@ void gui::on_startbutton_clicked()
         {
             QThread::sleep(1);
         }
-        running = false;
+        processrunning = false;
         QMetaObject::invokeMethod(ui->startbutton, "setEnabled", Qt::QueuedConnection, Q_ARG(bool, true));
     });
 }
@@ -710,12 +749,239 @@ void gui::on_stopbutton_clicked()
 {
     if (!mcapi::StopProcess(&process))
     {
-        qDebug() << "Failed to stop Minecraft.";
+        QMessageBox::critical(this, "error", "Failed to stop minecraft.");
     }
     else
     {
-        qDebug() << "Minecraft stopped.";
-        running = false;
+        QMessageBox::information(this, "info", "Minecraft stopped.");
+        processrunning = false;
         ui->startbutton->setEnabled(true);
     }
+}
+
+bool gui::StartMicrosoftLogin()
+{
+    std::string accesstoken;
+    if (!microsoftlogin)
+    {
+        // - get microsoft login url.
+        auto codeurlopt = mcapi::auth::GetMicrosoftLoginUrl();
+        if (!codeurlopt)
+        {
+            qDebug() << "Failed to get auth url.";
+            return false;
+        }
+        auto codeurl = *codeurlopt;
+
+        // - start microsoft login listener for auth code.
+        qDebug() << "180 seconds until login gets cancelled. Please press the cancel button if you want to retry the login process.";
+        auto codeopt = mcapi::auth::StartMicrosoftLoginListener(codeurl);
+        if (!codeopt)
+        {
+            qDebug() << "Failed to login with Microsoft.";
+            return false;
+        }
+        auto code = *codeopt;
+        if (code == "timeout")
+        {
+            qDebug() << "Login canceled (timeout reached).";
+            return false;
+        }
+
+        // - get access token json.
+        auto accessjsonopt = mcapi::auth::GetAccessTokenJson(code);
+        if (!accessjsonopt)
+        {
+            qDebug() << "Failed to get access token json.";
+            return false;
+        }
+        auto accessjson = *accessjsonopt;
+
+        // - get access token from json.
+        auto accesstokenopt = mcapi::auth::GetAccessTokenFromJson(accessjson);
+        if (!accesstokenopt)
+        {
+            qDebug() << "Failed to get access token.";
+            return false;
+        }
+        accesstoken = *accesstokenopt;
+
+        // - get refresh token from json.
+        auto refreshtokenopt = mcapi::auth::GetRefreshTokenFromJson(accessjson);
+        if (!refreshtokenopt)
+        {
+            qDebug() << "Failed to get access token.";
+            return false;
+        }
+        auto refreshtoken = *refreshtokenopt;
+    }
+    if (microsoftlogin)
+    {
+        // - get access token from refresh token.
+        auto accesstokenopt = mcapi::auth::GetAccessTokenFromRefreshToken();
+        if (!accesstokenopt)
+        {
+            qDebug() << "Failed to get access token.";
+            return false;
+        }
+        accesstoken = *accesstokenopt;
+    }
+
+    // - get xbox token json.
+    auto xboxjsonopt = mcapi::auth::GetXboxTokenJson(accesstoken);
+    if (!xboxjsonopt)
+    {
+        qDebug() << "Failed to get xbox token json.";
+        return false;
+    }
+    auto xboxjson = *xboxjsonopt;
+
+    // - get xbox token from json.
+    auto xboxtokenopt = mcapi::auth::GetXboxTokenFromJson(xboxjson);
+    if (!xboxtokenopt)
+    {
+        qDebug() << "Failed to get xbox token from json.";
+        return false;
+    }
+    auto xboxtoken = *xboxtokenopt;
+
+    // - get xbox hash from json.
+    auto xboxhashopt = mcapi::auth::GetXboxHashFromJson(xboxjson);
+    if (!xboxhashopt)
+    {
+        qDebug() << "Failed to get xbox hash from json.";
+        return false;
+    }
+    auto xboxhash = *xboxhashopt;
+
+    // - get xsts token json.
+    auto xstsjsonopt = mcapi::auth::GetXstsTokenJson(xboxtoken);
+    if (!xstsjsonopt)
+    {
+        qDebug() << "Failed to get xsts token json.";
+        return false;
+    }
+    auto xstsjson = *xstsjsonopt;
+
+    // - get xsts token from json.
+    auto xststokenopt = mcapi::auth::GetXstsTokenFromJson(xstsjson);
+    if (!xststokenopt)
+    {
+        qDebug() << "Failed to get xsts token from json.";
+        return false;
+    }
+    auto xststoken = *xststokenopt;
+
+    // - get minecraft token json.
+    auto mcjsonopt = mcapi::auth::GetMinecraftTokenJson(xboxhash, xststoken);
+    if (!mcjsonopt)
+    {
+        qDebug() << "Failed to get minecraft token json.";
+        return false;
+    }
+    auto mcjson = *mcjsonopt;
+
+    // - get minecraft token from json.
+    auto mctokenopt = mcapi::auth::GetMinecraftTokenFromJson(mcjson);
+    if (!mctokenopt)
+    {
+        qDebug() << "Failed to get minecraft token from json.";
+        return false;
+    }
+    auto mctoken = *mctokenopt;
+
+    // - get minecraft profile json.
+    auto profileopt = mcapi::auth::GetMinecraftProfileJson(mctoken);
+    if (!profileopt)
+    {
+        qDebug() << "Failed to get minecraft profile json.";
+        return false;
+    }
+    auto profilejson = *profileopt;
+
+    // - get minecraft username from profile json.
+    auto usernameopt = mcapi::auth::GetUsernameFromProfileJson(profilejson);
+    if (!usernameopt)
+    {
+        qDebug() << "Failed to get minecraft username from profile json.";
+        return false;
+    }
+    auto username = *usernameopt;
+
+    // - get minecraft uuid from profile json.
+    auto uuidopt = mcapi::auth::GetUuidFromProfileJson(profilejson);
+    if (!uuidopt)
+    {
+        qDebug() << "Failed to get minecraft uuid from profile json.";
+        return false;
+    }
+    auto uuid = *uuidopt;
+
+    qDebug() << username;
+    qDebug() << uuid;
+
+    microsoftusername = username;
+    microsoftuuid = uuid;
+    microsoftaccesstoken = mctoken;
+
+    ui->usernameinput->setText(QString::fromStdString(username));
+    ui->usernameinput->setEnabled(false);
+    return true;
+}
+
+void gui::on_loginmicrosoftbutton_clicked()
+{
+    if (loginrunning.exchange(true))
+        return;
+
+    microsoftlogin = fs::exists(".mcapi/refresh_token");
+
+    if (!microsoftlogin)
+    {
+        ui->logincancelbutton->show();
+        microsoft = true;
+    }
+    ui->loginmicrosoftbutton->setEnabled(false);
+    ui->offlinebutton->setEnabled(false);
+
+    QFuture<void> future = QtConcurrent::run([this]()
+    {
+        bool success = StartMicrosoftLogin();
+
+        QMetaObject::invokeMethod(this, [this, success]()
+        {
+            loginrunning = false;
+
+            if (!microsoftlogin)
+            {
+                ui->logincancelbutton->hide();
+            }
+            ui->loginmicrosoftbutton->setEnabled(true);
+            ui->offlinebutton->setEnabled(true);
+
+            if (!success)
+            {
+                QMessageBox::critical(this, "error", "Login failed.");
+            }
+            else
+            {
+                qDebug() << "Logged in.";
+                ui->pages->setCurrentIndex(1);
+                QMessageBox::information(this, "info", "Logged in as: " + QString::fromStdString(microsoftusername));
+            }
+        }, Qt::QueuedConnection);
+    });
+}
+
+void gui::on_logincancelbutton_clicked()
+{
+    bool running = mcapi::auth::StopMicrosoftLoginListener();
+    if (running)
+        qDebug() << "Login canceled.";
+
+    ui->logincancelbutton->hide();
+    ui->loginmicrosoftbutton->setEnabled(true);
+    ui->offlinebutton->setEnabled(true);
+    loginrunning = false;
+    microsoft = false;
 }

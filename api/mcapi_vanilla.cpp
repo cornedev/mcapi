@@ -124,87 +124,7 @@ static void GetArgsAppend(const json& node, std::vector<std::string>& out, const
         }
     }
 }
-
-static size_t curl_write_callback(void* ptr, size_t size, size_t nmemb, void* userdata)
-{
-    auto* pair = static_cast<std::pair<std::string*, std::ofstream*>*>(userdata);
-    const size_t total = size * nmemb;
-
-    if (pair->second && pair->second->is_open())
-        pair->second->write(static_cast<char*>(ptr), total);
-
-    if (pair->first)
-        pair->first->append(static_cast<char*>(ptr), total);
-
-    return total;
-}
 // - end helpers.
-
-std::optional<std::string> GET(const std::wstring& url, GETmode mode, const std::string& filename, const std::string& folder)
-{
-    std::string curlurl(url.begin(), url.end());
-
-    std::ofstream out;
-    std::string response;
-
-    if (mode == GETmode::DiskOnly || mode == GETmode::MemoryAndDisk)
-    {
-        std::string diskfile = filename;
-
-        if (diskfile.empty())
-        {
-            auto slash = curlurl.find_last_of('/');
-            if (slash != std::string::npos && slash + 1 < curlurl.size())
-                diskfile = curlurl.substr(slash + 1);
-
-            if (diskfile.empty())
-                diskfile = "download.bin";
-        }
-
-        if (!folder.empty())
-        {
-            std::filesystem::create_directories(folder);
-            diskfile = folder + "/" + diskfile;
-        }
-
-        out.open(diskfile, std::ios::binary);
-        if (!out)
-            return std::nullopt;
-    }
-
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return std::nullopt;
-
-    std::pair<std::string*, std::ofstream*> userdata{
-        (mode == GETmode::MemoryOnly || mode == GETmode::MemoryAndDisk) ? &response : nullptr,
-        (mode == GETmode::DiskOnly  || mode == GETmode::MemoryAndDisk) ? &out      : nullptr
-    };
-
-    curl_easy_setopt(curl, CURLOPT_URL, curlurl.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &userdata);
-    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-    // - security.
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-
-    CURLcode res = curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
-
-    if (out.is_open())
-        out.close();
-
-    if (res != CURLE_OK)
-        return std::nullopt;
-
-    if (mode == GETmode::DiskOnly)
-        return std::string{};
-
-    return response;
-}
 
 namespace vanilla
 {
@@ -726,7 +646,7 @@ std::optional<std::string> GetClassPath(const std::string& versionjson, const st
     }
 }
 
-std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os)
+std::optional<std::string> GetLaunchCommand(const std::string& username, const std::string& classpath, const std::string& versionjson, const std::string& versionid, OS os, const std::string& uuid, const std::string& accesstoken, const std::string& usertype)
 {
     try
     {
@@ -749,9 +669,9 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
             {"assets_root", assetsdir.string()},
             {"game_assets", assetsdir.string()},
             {"assets_index_name", j.value("assets", versionid)},
-            {"auth_uuid", "00000000-0000-0000-0000-000000000000"},
-            {"auth_access_token", "0"},
-            {"user_type", "mojang"},
+            {"auth_uuid", uuid},
+            {"auth_access_token", accesstoken},
+            {"user_type", usertype},
             {"version_type", j.value("type", "release")},
             {"classpath", classpath},
             {"natives_directory", nativesdir.string()},
