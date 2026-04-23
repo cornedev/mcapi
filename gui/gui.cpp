@@ -917,8 +917,8 @@ bool gui::StartMicrosoftLogin()
     }
     auto uuid = *uuidopt;
 
-    qDebug() << username;
-    qDebug() << uuid;
+    qDebug() << QString::fromStdString(username);
+    qDebug() << QString::fromStdString(uuid);
 
     microsoftusername = username;
     microsoftuuid = uuid;
