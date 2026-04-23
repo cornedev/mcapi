@@ -14,6 +14,7 @@ qt_standard_project_setup()
 set(RUNTIME_DIR ${CMAKE_SOURCE_DIR}/runtime)
 set(RUNTIME_BIN_DIR ${RUNTIME_DIR}/bin)
 set(PLATFORMS_DIR ${RUNTIME_DIR}/platforms)
+set(GFX_DIR ${CMAKE_SOURCE_DIR}/gfx)
 set(CMAKE_AUTORCC ON)
 
 if(WIN32)
@@ -33,6 +34,8 @@ qt_add_executable(mcapi_gui
     ../api/mcapi_process.cpp
     ../api/mcapi_java.cpp
     ../api/mcapi_fabric.cpp
+    ../api/mcapi_auth.cpp
+    ../api/mcapi_http.cpp
     ${ICON_RC}
     console.h console.cpp console.ui
 )
@@ -56,6 +59,7 @@ if (WIN32)
         ${CURL_LIB}
         LibArchive::LibArchive
         nlohmann_json::nlohmann_json
+        -lws2_32
     )
 elseif(APPLE)
     target_link_libraries(mcapi_gui PRIVATE
@@ -73,7 +77,6 @@ endif()
 
 if(WIN32)
     file(GLOB PLATFORMS "${PLATFORMS_DIR}/*.dll")
-
     add_custom_command(TARGET mcapi_gui POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
                 $<TARGET_FILE_DIR:mcapi_gui>/platforms
@@ -83,9 +86,17 @@ if(WIN32)
     )
 endif()
 
+file(GLOB PLATFORMS "${GFX_DIR}/*.html")
+add_custom_command(TARGET mcapi_gui POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            $<TARGET_FILE_DIR:mcapi_gui>/gfx
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${PLATFORMS}
+            $<TARGET_FILE_DIR:mcapi_gui>/gfx
+)
+
 if(WIN32)
     file(GLOB RUNTIME_DLLS "${RUNTIME_BIN_DIR}/*.dll")
-
     add_custom_command(TARGET mcapi_gui POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${RUNTIME_DLLS}
