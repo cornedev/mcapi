@@ -114,6 +114,7 @@ namespace mcapi
         std::optional<std::string> GetAccessTokenJson(const std::string& code);
         std::optional<std::string> GetAccessTokenFromJson(const std::string& tokenjson);
         std::optional<std::string> GetRefreshTokenFromJson(const std::string& tokenjson);
+        std::optional<std::string> GetAccessTokenFromRefreshToken();
         std::optional<std::string> GetXboxTokenJson(const std::string& accesstoken);
         std::optional<std::string> GetXboxTokenFromJson(const std::string& xboxjson);
         std::optional<std::string> GetXboxHashFromJson(const std::string& xboxjson);
