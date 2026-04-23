@@ -114,7 +114,7 @@
     </widget>
     <widget class="QPushButton" name="loginmicrosoftbutton">
      <property name="enabled">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
@@ -141,12 +141,38 @@
       <string>Copyright (c) 2025-2026 cornedev</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="logincancelbutton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>495</x>
+       <y>250</y>
+       <width>111</width>
+       <height>51</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Cancel login</string>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+     <property name="default">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+    </widget>
     <zorder>loginbackground</zorder>
     <zorder>offlinebutton</zorder>
     <zorder>logologin</zorder>
     <zorder>loginwip</zorder>
     <zorder>loginmicrosoftbutton</zorder>
     <zorder>copyrightnote</zorder>
+    <zorder>logincancelbutton</zorder>
    </widget>
    <widget class="QWidget" name="launcher">
     <widget class="QLabel" name="version">
