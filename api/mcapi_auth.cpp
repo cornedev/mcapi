@@ -130,7 +130,7 @@ std::optional<std::string> StartMicrosoftLoginListener(const std::string& url)
 
         // - browser response.
         std::string redirect;
-        std::ifstream file(".mcapi/mcapi_redirect.html", std::ios::binary);
+        std::ifstream file("mcapi_redirect.html", std::ios::binary);
         if (file)
         {
             std::ostringstream redirectbuffer;
