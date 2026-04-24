@@ -399,6 +399,43 @@ std::optional<std::string> GetMinecraftTokenFromJson(const std::string& minecraf
     }
 }
 
+std::optional<std::string> GetMinecraftOwnershipJson(const std::string& minecrafttoken)
+{
+    return GET(L"https://api.minecraftservices.com/entitlements/mcstore", GETmode::MemoryOnly, "", "", {"Authorization: Bearer " + minecrafttoken, "Accept: application/json"});
+}
+
+std::optional<bool> GetMinecraftOwnershipFromJson(const std::string& ownerjson)
+{
+    try
+    {
+        auto j = json::parse(ownerjson);
+        if (!j.contains("items") || 
+            !j["items"].is_array())
+        {
+            return std::nullopt;
+        }
+
+        const auto& items = j["items"];
+        if (items.empty())
+            return false;
+
+        for (const auto& item : items)
+        {
+            if (!item.contains("name") || !item["name"].is_string())
+                continue;
+
+            const std::string& name = item["name"].get<std::string>();
+            if (name == "product_minecraft" || name == "game_minecraft")
+                return true;
+        }
+        return false;
+    }
+    catch (...)
+    {
+        return std::nullopt;
+    }
+}
+
 std::optional<std::string> GetMinecraftProfileJson(const std::string& minecrafttoken)
 {
     return GET(L"https://api.minecraftservices.com/minecraft/profile", GETmode::MemoryOnly, "", "", {"Authorization: Bearer " + minecrafttoken, "Accept: application/json"});
