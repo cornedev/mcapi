@@ -122,6 +122,8 @@ namespace mcapi
         std::optional<std::string> GetXstsTokenFromJson(const std::string& xstsjson);
         std::optional<std::string> GetMinecraftTokenJson(const std::string& xboxhash, const std::string& xststoken);
         std::optional<std::string> GetMinecraftTokenFromJson(const std::string& minecraftjson);
+        std::optional<std::string> GetMinecraftOwnershipJson(const std::string& minecrafttoken);
+        std::optional<bool> GetMinecraftOwnershipFromJson(const std::string& ownerjson);
         std::optional<std::string> GetMinecraftProfileJson(const std::string& minecrafttoken);
         std::optional<std::string> GetUsernameFromProfileJson(const std::string& profilejson);
         std::optional<std::string> GetUuidFromProfileJson(const std::string& profilejson);
