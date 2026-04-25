@@ -6,7 +6,8 @@ static gui* instance = nullptr;
 
 void ConsoleHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
-    if (instance && instance->consolewindow) {
+    if (instance && instance->consolewindow)
+    {
         QMetaObject::invokeMethod(instance->consolewindow, [msg]() {
             instance->consolewindow->appendmessage(msg);
         }, Qt::QueuedConnection);
@@ -35,6 +36,12 @@ gui::gui(QWidget *parent)
         ui->pages->setCurrentIndex(1);
     });
 
+    // - use latest login checkbox.
+    connect(ui->latestlogin, &QCheckBox::toggled, this, [this](bool checked)
+    {
+        microsoftlatestlogin = checked;
+    });
+
     // - back button.
     connect(ui->backbutton, &QPushButton::clicked, [this]()
     {
@@ -43,20 +50,24 @@ gui::gui(QWidget *parent)
         ui->usernameinput->setEnabled(true);
     });
 
-    // - console button.
+    // - console window and console button.
+    consolewindow = new console(this);
+    consolewindow->setWindowFlags(Qt::Window);
+
+    connect(consolewindow, &QObject::destroyed, [this]()
+    {
+        consolewindow = nullptr;
+    });
+    consolewindow->hide();
+
     connect(ui->consolebutton, &QPushButton::clicked, [this]()
     {
-        if (!consolewindow) {
-            consolewindow = new console(this);
-            consolewindow->setWindowFlags(Qt::Window);
-            connect(consolewindow, &QObject::destroyed, [this]()
-            {
-                consolewindow = nullptr;
-            });
+        if (consolewindow)
+        {
+            consolewindow->show();
+            consolewindow->raise();
+            consolewindow->activateWindow();
         }
-        consolewindow->show();
-        consolewindow->raise();
-        consolewindow->activateWindow();
     });
 
     // - loader box.
@@ -409,6 +420,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
             launchcmd = *launchcmdopt;
             qDebug() << "Launch command built.";
         }
+        qDebug() << launchcmd;
 
         // - launch minecraft.
         std::string javapath;
@@ -890,6 +902,23 @@ bool gui::StartMicrosoftLogin()
     }
     auto mctoken = *mctokenopt;
 
+    // - verify minecraft ownership.
+    auto ownerjsonopt = mcapi::auth::GetMinecraftOwnershipJson(mctoken);
+    if (!ownerjsonopt)
+    {
+        qDebug() << "Failed to get minecraft entitlements json.";
+        return false;
+    }
+    auto ownerjson = *ownerjsonopt;
+
+    auto owns = mcapi::auth::GetMinecraftOwnershipFromJson(ownerjson);
+    if (!owns.value())
+    {
+        QMetaObject::invokeMethod(this, [this](){QMessageBox::critical(this, "error", "This account doesn't own minecraft.");}, Qt::QueuedConnection);
+        loginfailedmessage = false;
+        return false;
+    }
+
     // - get minecraft profile json.
     auto profileopt = mcapi::auth::GetMinecraftProfileJson(mctoken);
     if (!profileopt)
@@ -917,8 +946,8 @@ bool gui::StartMicrosoftLogin()
     }
     auto uuid = *uuidopt;
 
-    qDebug() << QString::fromStdString(username);
-    qDebug() << QString::fromStdString(uuid);
+    qDebug() << username;
+    qDebug() << uuid;
 
     microsoftusername = username;
     microsoftuuid = uuid;
@@ -934,7 +963,14 @@ void gui::on_loginmicrosoftbutton_clicked()
     if (loginrunning.exchange(true))
         return;
 
-    microsoftlogin = fs::exists(".mcapi/refresh_token");
+    if (microsoftlatestlogin)
+    {
+        microsoftlogin = fs::exists(".mcapi/refresh_token");
+    }
+    else
+    {
+        microsoftlogin = false;
+    }
 
     if (!microsoftlogin)
     {
@@ -943,6 +979,8 @@ void gui::on_loginmicrosoftbutton_clicked()
     }
     ui->loginmicrosoftbutton->setEnabled(false);
     ui->offlinebutton->setEnabled(false);
+
+    loginfailedmessage = true;
 
     QFuture<void> future = QtConcurrent::run([this]()
     {
@@ -959,11 +997,11 @@ void gui::on_loginmicrosoftbutton_clicked()
             ui->loginmicrosoftbutton->setEnabled(true);
             ui->offlinebutton->setEnabled(true);
 
-            if (!success)
+            if (!success && loginfailedmessage)
             {
                 QMessageBox::critical(this, "error", "Login failed.");
             }
-            else
+            else if (success)
             {
                 qDebug() << "Logged in.";
                 ui->pages->setCurrentIndex(1);
