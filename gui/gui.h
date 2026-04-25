@@ -57,6 +57,8 @@ private:
 
     QString username;
 
+    bool loginfailedmessage = true;
+    bool microsoftlatestlogin = false;
     bool microsoftlogin = false;
     bool microsoft = false;
     std::string microsoftusername;
