@@ -420,7 +420,6 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
             launchcmd = *launchcmdopt;
             qDebug() << "Launch command built.";
         }
-        qDebug() << launchcmd;
 
         // - launch minecraft.
         std::string javapath;
@@ -946,8 +945,8 @@ bool gui::StartMicrosoftLogin()
     }
     auto uuid = *uuidopt;
 
-    qDebug() << username;
-    qDebug() << uuid;
+    qDebug() << QString::fromStdString(username);
+    qDebug() << QString::fromStdString(uuid);
 
     microsoftusername = username;
     microsoftuuid = uuid;
