@@ -558,22 +558,22 @@ std::optional<std::vector<std::string>> ExtractLibrariesNatives(const std::vecto
         {
             const char* name = archive_entry_pathname(entry);
             if (!name) { archive_read_data_skip(ar); continue; }
-            std::string entryName(name);
+            std::string entryname(name);
 
-            if (entryName.rfind("META-INF/", 0) == 0 || archive_entry_filetype(entry) == AE_IFDIR)
+            if (entryname.rfind("META-INF/", 0) == 0 || archive_entry_filetype(entry) == AE_IFDIR)
             {
                 archive_read_data_skip(ar);
                 continue;
             }
 
-            if (entryName.size() < nativesext.size() ||
-                entryName.substr(entryName.size() - nativesext.size()) != nativesext)
+            if (entryname.size() < nativesext.size() ||
+                entryname.substr(entryname.size() - nativesext.size()) != nativesext)
             {
                 archive_read_data_skip(ar);
                 continue;
             }
 
-            fs::path outpath = datapath / versionid / "natives" / fs::path(entryName).filename();
+            fs::path outpath = datapath / versionid / "natives" / fs::path(entryname).filename();
             if (fs::exists(outpath) && fs::file_size(outpath) > 0)
             {
                 extracted.push_back(outpath.string());
@@ -718,6 +718,23 @@ std::optional<std::string> GetLaunchCommand(const std::string& username, const s
         {
             gameargs = ParseLegacyArgs(j["minecraftArguments"], vars);
             jvmargs = {"-Xmx2G", "-Xms1G", "-Djava.library.path=" + nativesdir.string(), "-cp", classpath};
+        }
+
+        // - force natives on the root for newer snapshots.
+        const std::string& natives = vars.at("natives_directory");
+        for (auto& arguments : jvmargs)
+        {
+            if (arguments.rfind("-Djava.library.path=", 0) == 0)
+                arguments = "-Djava.library.path=" + natives;
+
+            else if (arguments.rfind("-Djna.tmpdir=", 0) == 0)
+                arguments = "-Djna.tmpdir=" + natives;
+
+            else if (arguments.rfind("-Dorg.lwjgl.system.SharedLibraryExtractPath=", 0) == 0)
+                arguments = "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + natives;
+
+            else if (arguments.rfind("-Dio.netty.native.workdir=", 0) == 0)
+                arguments = "-Dio.netty.native.workdir=" + natives;
         }
 
         std::ostringstream cmd;
