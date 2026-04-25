@@ -676,7 +676,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         if (microsoft)
         {
             qDebug() << "Building launch command...";
-            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(microsoftusername, classpath, mergedjson, versionselected.toStdString(), osenum, microsoftuuid, microsoftaccesstoken, "msa");
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(microsoftusername, classpath, mergedjson, versionid.toStdString(), osenum, microsoftuuid, microsoftaccesstoken, "msa");
             if (!launchcmdopt)
             {
                 qDebug() << "Failed to build launch command.";
@@ -688,7 +688,7 @@ bool gui::StartVersion(const QString &username, const QString &loaderselected, c
         else
         {
             qDebug() << "Building launch command...";
-            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, mergedjson, versionselected.toStdString(), osenum);
+            auto launchcmdopt = mcapi::vanilla::GetLaunchCommand(username.toStdString(), classpath, mergedjson, versionid.toStdString(), osenum);
             if (!launchcmdopt)
             {
                 qDebug() << "Failed to build launch command.";
